@@ -58,6 +58,32 @@ export const composioToolkitKindValidator = v.union(
   v.literal("mcp")
 )
 
+export const catalogComparisonStatusValidator = v.union(
+  v.literal("match"),
+  v.literal("mismatch"),
+  v.literal("not_researched"),
+  v.literal("not_applicable")
+)
+
+export const catalogBaselineValidator = v.object({
+  rank: v.number(),
+  appName: v.string(),
+  inCatalog: v.boolean(),
+  absenceReason: v.union(v.string(), v.null()),
+  composioSlug: v.union(v.string(), v.null()),
+  composioToolkitKind: v.union(composioToolkitKindValidator, v.null()),
+  canonicalDocsUrl: v.union(v.string(), v.null()),
+  snapshotPath: v.union(v.string(), v.null()),
+  snapshotVersion: v.union(v.string(), v.null()),
+  composioCategory: v.union(v.string(), v.null()),
+  composioAuth: v.union(v.string(), v.null()),
+  composioOauthAvailable: v.union(v.string(), v.null()),
+  toolCount: v.union(v.number(), v.null()),
+  triggerCount: v.union(v.number(), v.null()),
+  headlineSummary: v.union(v.string(), v.null()),
+  updatedAt: v.number(),
+})
+
 export const researchStatusValidator = v.union(
   v.literal("not_started"),
   v.literal("queued"),
@@ -131,4 +157,26 @@ export default defineSchema({
     .index("by_buildability", ["buildability"])
     .index("by_composioSlug", ["composioSlug"])
     .index("by_researchStatus", ["researchStatus"]),
+
+  composioCatalog: defineTable({
+    rank: v.number(),
+    appName: v.string(),
+    inCatalog: v.boolean(),
+    absenceReason: v.union(v.string(), v.null()),
+    composioSlug: v.union(v.string(), v.null()),
+    composioToolkitKind: v.union(composioToolkitKindValidator, v.null()),
+    canonicalDocsUrl: v.union(v.string(), v.null()),
+    snapshotPath: v.union(v.string(), v.null()),
+    snapshotVersion: v.union(v.string(), v.null()),
+    composioCategory: v.union(v.string(), v.null()),
+    composioAuth: v.union(v.string(), v.null()),
+    composioOauthAvailable: v.union(v.string(), v.null()),
+    toolCount: v.union(v.number(), v.null()),
+    triggerCount: v.union(v.number(), v.null()),
+    headlineSummary: v.union(v.string(), v.null()),
+    updatedAt: v.number(),
+  })
+    .index("by_rank", ["rank"])
+    .index("by_inCatalog", ["inCatalog"])
+    .index("by_composioSlug", ["composioSlug"]),
 })

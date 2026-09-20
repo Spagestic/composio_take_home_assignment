@@ -9,6 +9,9 @@
  */
 
 import type * as apps from "../apps.js";
+import type * as catalog from "../catalog.js";
+import type * as catalogParser from "../catalogParser.js";
+import type * as comparison from "../comparison.js";
 import type * as exa from "../exa.js";
 import type * as llm from "../llm.js";
 import type * as mistral from "../mistral.js";
@@ -24,6 +27,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   apps: typeof apps;
+  catalog: typeof catalog;
+  catalogParser: typeof catalogParser;
+  comparison: typeof comparison;
   exa: typeof exa;
   llm: typeof llm;
   mistral: typeof mistral;

@@ -12,6 +12,7 @@ import {
   SheetHeaderSection,
   AgentFindings,
   WorkflowRunList,
+  ComposioCatalogBaseline,
 } from "./app-detail"
 
 interface AppDetailSheetProps {
@@ -64,7 +65,12 @@ export function AppDetailSheet({
         />
 
         <div className="flex flex-col gap-5 p-6">
-          {/* Core Findings Section */}
+          {/* Ground Truth / Composio Baseline Section */}
+          <ComposioCatalogBaseline app={app} />
+
+          <Separator />
+
+          {/* Core Agent Findings Section */}
           <AgentFindings app={app} />
 
           <Separator />
