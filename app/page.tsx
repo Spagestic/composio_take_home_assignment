@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 
-import { columns } from "@/components/table/columns"
-import { DataTable } from "@/components/table/data-table"
+import { AppsTableContainer } from "@/components/table/apps-table-container"
 import { apps, type AppResearch } from "@/components/table/data"
 
 async function getData(): Promise<AppResearch[]> {
@@ -9,12 +8,12 @@ async function getData(): Promise<AppResearch[]> {
 }
 
 export default async function Page() {
-  const data = await getData()
+  const initialData = await getData()
 
   return (
     <div className="container mx-auto py-10">
       <Suspense>
-        <DataTable columns={columns} data={data} />
+        <AppsTableContainer initialData={initialData} />
       </Suspense>
     </div>
   )

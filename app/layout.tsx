@@ -1,6 +1,7 @@
 import { Geist_Mono, Inter } from "next/font/google"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
 import "./globals.css"
+import { ConvexClientProvider } from "@/components/convex-client-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toast"
@@ -29,12 +30,14 @@ export default function RootLayout({
       )}
     >
       <body>
-        <NuqsAdapter>
-          <ThemeProvider>
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </NuqsAdapter>
+        <ConvexClientProvider>
+          <NuqsAdapter>
+            <ThemeProvider>
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </NuqsAdapter>
+        </ConvexClientProvider>
       </body>
     </html>
   )
