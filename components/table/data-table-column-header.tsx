@@ -2,7 +2,7 @@
 
 import { type HTMLAttributes } from "react"
 import { type Column, type RowData } from "@tanstack/react-table"
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react"
+import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -64,9 +64,12 @@ export function DataTableColumnHeader<TData extends RowData, TValue>({
               Desc
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-              <EyeOff />
-              Hide
+            <DropdownMenuItem
+              disabled={!column.getIsSorted()}
+              onClick={() => column.clearSorting()}
+            >
+              <ChevronsUpDown />
+              Reset
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>

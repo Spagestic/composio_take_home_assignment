@@ -64,9 +64,7 @@ export const columns = columnHelper.columns([
     enableHiding: false,
   }),
   columnHelper.accessor("rank", {
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="#" />
-    ),
+    header: () => null,
     cell: ({ row }) => (
       <span className="text-muted-foreground tabular-nums">
         {row.getValue("rank")}

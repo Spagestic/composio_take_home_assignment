@@ -28,7 +28,6 @@ import {
   DataTableFacetedFilter,
 } from "./data-table-faceted-filter"
 import { DataTablePagination } from "./data-table-pagination"
-import { DataTableViewOptions } from "./data-table-view-options"
 import { features, type DataTableFeatures } from "./data-table-features"
 import { useDataTableSearchParams } from "./search-params"
 
@@ -121,7 +120,6 @@ export function DataTable<TData extends RowData & { rank: number }>({
             <X data-icon="inline-end" />
           </Button>
         ) : null}
-        <DataTableViewOptions table={table} />
       </div>
       <div className="overflow-hidden rounded-md border">
         <Table>
