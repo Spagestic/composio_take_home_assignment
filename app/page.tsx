@@ -1,9 +1,9 @@
-import { columns } from "@/components/payments/columns"
-import { DataTable } from "@/components/payments/data-table"
-import { payments, type Payment } from "@/components/payments/data"
+import { columns } from "@/components/table/columns"
+import { DataTable } from "@/components/table/data-table"
+import { apps, type AppResearch } from "@/components/table/data"
 
-async function getData(): Promise<Payment[]> {
-  return payments
+async function getData(): Promise<AppResearch[]> {
+  return apps
 }
 
 export default async function Page() {

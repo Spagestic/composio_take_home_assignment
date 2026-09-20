@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { type Column, type RowData } from "@tanstack/react-table"
-import { Check, CheckCircle2, Circle, Loader, PlusCircle, XCircle } from "lucide-react"
+import { Check, PlusCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -26,13 +26,36 @@ import {
 import { Separator } from "@/components/ui/separator"
 
 import { type DataTableFeatures } from "./data-table-features"
+import {
+  ACCESS_MODELS,
+  AUTH_METHODS,
+  BUILDABILITY,
+  CATEGORIES,
+  accessLabels,
+  authLabels,
+  buildabilityLabels,
+  categoryLabels,
+} from "./data"
 
-export const statusFilterOptions = [
-  { label: "Pending", value: "pending", icon: Circle },
-  { label: "Processing", value: "processing", icon: Loader },
-  { label: "Success", value: "success", icon: CheckCircle2 },
-  { label: "Failed", value: "failed", icon: XCircle },
-] as const
+export const categoryFilterOptions = CATEGORIES.map((value) => ({
+  label: categoryLabels[value],
+  value,
+}))
+
+export const authFilterOptions = AUTH_METHODS.map((value) => ({
+  label: authLabels[value],
+  value,
+}))
+
+export const accessFilterOptions = ACCESS_MODELS.map((value) => ({
+  label: accessLabels[value],
+  value,
+}))
+
+export const buildabilityFilterOptions = BUILDABILITY.map((value) => ({
+  label: buildabilityLabels[value],
+  value,
+}))
 
 interface DataTableFacetedFilterProps<TData extends RowData, TValue> {
   column?: Column<DataTableFeatures, TData, TValue>

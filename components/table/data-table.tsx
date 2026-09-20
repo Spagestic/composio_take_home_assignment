@@ -24,19 +24,22 @@ import {
 } from "@/components/ui/table"
 
 import {
+  accessFilterOptions,
+  authFilterOptions,
+  buildabilityFilterOptions,
+  categoryFilterOptions,
   DataTableFacetedFilter,
-  statusFilterOptions,
 } from "./data-table-faceted-filter"
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableViewOptions } from "./data-table-view-options"
 import { features, type DataTableFeatures } from "./data-table-features"
 
-interface DataTableProps<TData extends RowData> {
+interface DataTableProps<TData extends RowData & { rank: number }> {
   columns: ColumnDef<DataTableFeatures, TData>[]
   data: TData[]
 }
 
-export function DataTable<TData extends RowData>({
+export function DataTable<TData extends RowData & { rank: number }>({
   columns,
   data,
 }: DataTableProps<TData>) {
@@ -52,6 +55,7 @@ export function DataTable<TData extends RowData>({
     features,
     data,
     columns,
+    getRowId: (row) => String(row.rank),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -68,18 +72,39 @@ export function DataTable<TData extends RowData>({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          placeholder="Filter apps..."
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
+            table.getColumn("name")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
-        {table.getColumn("status") ? (
+        {table.getColumn("category") ? (
           <DataTableFacetedFilter
-            column={table.getColumn("status")}
-            title="Status"
-            options={[...statusFilterOptions]}
+            column={table.getColumn("category")}
+            title="Category"
+            options={categoryFilterOptions}
+          />
+        ) : null}
+        {table.getColumn("authMethods") ? (
+          <DataTableFacetedFilter
+            column={table.getColumn("authMethods")}
+            title="Auth"
+            options={authFilterOptions}
+          />
+        ) : null}
+        {table.getColumn("access") ? (
+          <DataTableFacetedFilter
+            column={table.getColumn("access")}
+            title="Access"
+            options={accessFilterOptions}
+          />
+        ) : null}
+        {table.getColumn("buildability") ? (
+          <DataTableFacetedFilter
+            column={table.getColumn("buildability")}
+            title="Verdict"
+            options={buildabilityFilterOptions}
           />
         ) : null}
         {table.state.columnFilters.length > 0 ? (
