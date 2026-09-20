@@ -219,3 +219,26 @@ bun run dev
 (`npx convex dev` for the Convex backend during development; do not use `npx convex deploy` except for production.)
 
 How to run the **research agent** across the 100 apps will be documented here once the pipeline exists.
+
+## Ground truth: existing Composio toolkits
+
+`data/` is a snapshot of [Composio toolkit docs](https://docs.composio.dev/toolkits) for apps in the research set. We will use it later to **cross-check the research agent** (did it say an app is already a toolkit when Composio already ships one, and do auth / tool counts line up with the official page).
+
+### How the files were collected
+
+1. Download the catalog markdown: `https://docs.composio.dev/toolkits.md` (Mintlify `.md` mirror of the toolkits index; ~1552 toolkits at snapshot time).
+2. Parse each row’s display name, URL slug, and `SLUG` (e.g. Telegram → `telegram` / `TELEGRAM`).
+3. Match the 100 research apps by name / slug (spaces → `_` or concatenation; aliases such as GoHighLevel → `highlevel`, WhatsApp Business → `whatsapp`).
+4. If a match exists, save the official page: `https://docs.composio.dev/toolkits/{slug}.md` → `data/{slug}.md`.
+5. If there is no catalog row, there is no file. **Absence is also a check:** the agent should not invent a Composio toolkit for those apps.
+
+### Coverage (100 apps)
+
+- **67 in catalog** — markdown saved under `data/`.
+- **33 not in catalog** — Podio, Copper, DealCloud, Front, LiveAgent, Gladly, Twilio, Zoho Cliq, Lark, Aircall, Vonage, systeme.io, Threads, WooCommerce, BigCommerce, Salesforce Commerce Cloud, Magento, Squarespace, Ecwid, Amazon Selling Partner, fanbasis, SE Ranking, Sherlock, Waterfall.io, MongoDB Atlas, Smartsheet, Binance, Paygent Connect, iPayX, PitchBook, Reducto, Mermaid CLI, Grain.
+
+Matching notes (so validation does not treat these as misses):
+
+- Some apps only appear as an **MCP toolkit** (`pylon_mcp`, `netlify_mcp`, `plaid_mcp`, `otter_ai_mcp`, `devin_mcp`, `higgsfield_mcp`), not a same-named REST toolkit.
+- **Zoho CRM** maps to the generic `zoho` toolkit, not a `zoho_crm` page.
+- **Mermaid CLI** was not saved: the catalog has [Mermaid Chart MCP](https://docs.composio.dev/toolkits/mermaid_chart_mcp.md), a different product.
