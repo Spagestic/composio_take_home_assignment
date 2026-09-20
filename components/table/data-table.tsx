@@ -1,11 +1,7 @@
 "use client"
 
 import * as React from "react"
-import {
-  useTable,
-  type ColumnDef,
-  type RowData,
-} from "@tanstack/react-table"
+import { useTable, type ColumnDef, type RowData } from "@tanstack/react-table"
 
 import { X } from "lucide-react"
 
@@ -20,16 +16,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-import {
-  accessFilterOptions,
-  authFilterOptions,
-  buildabilityFilterOptions,
-  categoryFilterOptions,
-  DataTableFacetedFilter,
-} from "./data-table-faceted-filter"
 import { DataTablePagination } from "./data-table-pagination"
 import { features, type DataTableFeatures } from "./data-table-features"
 import { useDataTableSearchParams } from "./search-params"
+import { type AppResearch } from "./data"
 
 interface DataTableProps<TData extends RowData & { rank: number }> {
   columns: ColumnDef<DataTableFeatures, TData>[]
@@ -40,7 +30,6 @@ export function DataTable<TData extends RowData & { rank: number }>({
   columns,
   data,
 }: DataTableProps<TData>) {
-  const [rowSelection, setRowSelection] = React.useState({})
   const {
     sorting,
     pagination,
@@ -61,74 +50,62 @@ export function DataTable<TData extends RowData & { rank: number }>({
     onPaginationChange,
     onColumnFiltersChange,
     onColumnVisibilityChange,
-    onRowSelectionChange: setRowSelection,
     autoResetPageIndex: false,
     state: {
       sorting,
       pagination,
       columnFilters,
       columnVisibility,
-      rowSelection,
     },
   })
 
+  // Summary counts for research progress
+  const apps = data as unknown as AppResearch[]
+  const completedCount = React.useMemo(
+    () =>
+      apps.filter(
+        (a) =>
+          a.researchStatus === "completed" ||
+          (a.buildability && a.researchStatus !== "failed")
+      ).length,
+    [apps]
+  )
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Filter apps..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        {table.getColumn("category") ? (
-          <DataTableFacetedFilter
-            column={table.getColumn("category")}
-            title="Category"
-            options={categoryFilterOptions}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Filter apps..."
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("name")?.setFilterValue(event.target.value)
+            }
+            className="max-w-xs"
           />
-        ) : null}
-        {table.getColumn("authMethods") ? (
-          <DataTableFacetedFilter
-            column={table.getColumn("authMethods")}
-            title="Auth"
-            options={authFilterOptions}
-          />
-        ) : null}
-        {table.getColumn("access") ? (
-          <DataTableFacetedFilter
-            column={table.getColumn("access")}
-            title="Access"
-            options={accessFilterOptions}
-          />
-        ) : null}
-        {table.getColumn("buildability") ? (
-          <DataTableFacetedFilter
-            column={table.getColumn("buildability")}
-            title="Verdict"
-            options={buildabilityFilterOptions}
-          />
-        ) : null}
-        {table.state.columnFilters.length > 0 ? (
-          <Button
-            variant="ghost"
-            onClick={() => table.resetColumnFilters()}
-          >
-            Reset
-            <X data-icon="inline-end" />
-          </Button>
-        ) : null}
+          {table.state.columnFilters.length > 0 ? (
+            <Button variant="ghost" onClick={() => table.resetColumnFilters()}>
+              Reset
+              <X data-icon="inline-end" />
+            </Button>
+          ) : null}
+        </div>
       </div>
+
       <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as
+                    | { className?: string }
+                    | undefined
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      className={meta?.className}
+                    >
                       {header.isPlaceholder ? null : (
                         <table.FlexRender header={header} />
                       )}
@@ -143,13 +120,20 @@ export function DataTable<TData extends RowData & { rank: number }>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      <table.FlexRender cell={cell} />
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const meta = cell.column.columnDef.meta as
+                      | { className?: string }
+                      | undefined
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={meta?.className}
+                      >
+                        <table.FlexRender cell={cell} />
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : (

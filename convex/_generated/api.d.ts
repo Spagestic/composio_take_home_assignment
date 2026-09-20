@@ -9,6 +9,11 @@
  */
 
 import type * as apps from "../apps.js";
+import type * as exa from "../exa.js";
+import type * as llm from "../llm.js";
+import type * as mistral from "../mistral.js";
+import type * as research from "../research.js";
+import type * as researchSteps from "../researchSteps.js";
 import type * as seed from "../seed.js";
 
 import type {
@@ -19,6 +24,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   apps: typeof apps;
+  exa: typeof exa;
+  llm: typeof llm;
+  mistral: typeof mistral;
+  research: typeof research;
+  researchSteps: typeof researchSteps;
   seed: typeof seed;
 }>;
 
@@ -48,4 +58,7 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  workflow: import("@convex-dev/workflow/_generated/component.js").ComponentApi<"workflow">;
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
+};

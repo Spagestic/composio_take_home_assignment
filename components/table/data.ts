@@ -45,6 +45,14 @@ export const BUILDABILITY = [
   "unknown",
 ] as const
 
+export const RESEARCH_STATUSES = [
+  "not_started",
+  "queued",
+  "running",
+  "completed",
+  "failed",
+] as const
+
 export type Category = (typeof CATEGORIES)[number]
 export type AuthMethod = (typeof AUTH_METHODS)[number]
 export type AccessModel = (typeof ACCESS_MODELS)[number]
@@ -52,6 +60,7 @@ export type ApiStyle = (typeof API_STYLES)[number]
 export type ApiBreadth = (typeof API_BREADTH)[number]
 export type Buildability = (typeof BUILDABILITY)[number]
 export type ComposioToolkitKind = "rest" | "mcp"
+export type ResearchStatus = (typeof RESEARCH_STATUSES)[number]
 
 export const categoryLabels: Record<Category, string> = {
   crm_sales: "CRM & Sales",
@@ -89,6 +98,14 @@ export const buildabilityLabels: Record<Buildability, string> = {
   unknown: "Unknown",
 }
 
+export const researchStatusLabels: Record<ResearchStatus, string> = {
+  not_started: "Not Researched",
+  queued: "Queued",
+  running: "Researching...",
+  completed: "Completed",
+  failed: "Failed",
+}
+
 export type AppResearch = {
   /** README list number 1–100 */
   rank: number
@@ -112,6 +129,14 @@ export type AppResearch = {
   composioInCatalog: boolean
   composioSlug: string | null
   composioToolkitKind: ComposioToolkitKind | null
+
+  /** Research execution status */
+  researchStatus?: ResearchStatus
+  researchStartedAt?: number | null
+  researchCompletedAt?: number | null
+  researchError?: string | null
+  workflowId?: string | null
+  workflowIds?: string[]
 }
 
 type SeedApp = Pick<
@@ -136,6 +161,11 @@ const RESEARCH_DEFAULTS = {
   blocker: null,
   docsUrl: null,
   evidenceNotes: null,
+  researchStatus: "not_started",
+  researchStartedAt: null,
+  researchCompletedAt: null,
+  researchError: null,
+  workflowId: null,
 } satisfies Omit<AppResearch, keyof SeedApp>
 
 function seed(apps: SeedApp[]): AppResearch[] {

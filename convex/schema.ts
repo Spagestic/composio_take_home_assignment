@@ -58,6 +58,14 @@ export const composioToolkitKindValidator = v.union(
   v.literal("mcp")
 )
 
+export const researchStatusValidator = v.union(
+  v.literal("not_started"),
+  v.literal("queued"),
+  v.literal("running"),
+  v.literal("completed"),
+  v.literal("failed")
+)
+
 export const appDocValidator = v.object({
   _id: v.id("apps"),
   _creationTime: v.number(),
@@ -78,6 +86,12 @@ export const appDocValidator = v.object({
   composioInCatalog: v.boolean(),
   composioSlug: v.union(v.string(), v.null()),
   composioToolkitKind: v.union(composioToolkitKindValidator, v.null()),
+  researchStatus: v.optional(researchStatusValidator),
+  researchStartedAt: v.optional(v.union(v.number(), v.null())),
+  researchCompletedAt: v.optional(v.union(v.number(), v.null())),
+  researchError: v.optional(v.union(v.string(), v.null())),
+  workflowId: v.optional(v.union(v.string(), v.null())),
+  workflowIds: v.optional(v.array(v.string())),
 })
 
 export default defineSchema({
@@ -103,9 +117,18 @@ export default defineSchema({
     composioInCatalog: v.boolean(),
     composioSlug: v.union(v.string(), v.null()),
     composioToolkitKind: v.union(composioToolkitKindValidator, v.null()),
+
+    // Research execution status
+    researchStatus: v.optional(researchStatusValidator),
+    researchStartedAt: v.optional(v.union(v.number(), v.null())),
+    researchCompletedAt: v.optional(v.union(v.number(), v.null())),
+    researchError: v.optional(v.union(v.string(), v.null())),
+    workflowId: v.optional(v.union(v.string(), v.null())),
+    workflowIds: v.optional(v.array(v.string())),
   })
     .index("by_rank", ["rank"])
     .index("by_category", ["category"])
     .index("by_buildability", ["buildability"])
-    .index("by_composioSlug", ["composioSlug"]),
+    .index("by_composioSlug", ["composioSlug"])
+    .index("by_researchStatus", ["researchStatus"]),
 })

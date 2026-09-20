@@ -57,14 +57,24 @@ export const buildabilityFilterOptions = BUILDABILITY.map((value) => ({
   value,
 }))
 
+export const researchStatusFilterOptions = [
+  { label: "Not Researched", value: "not_started" },
+  { label: "Queued", value: "queued" },
+  { label: "Researching...", value: "running" },
+  { label: "Completed", value: "completed" },
+  { label: "Failed", value: "failed" },
+] as const
+
+interface DataTableFacetedFilterOption {
+  label: string
+  value: string
+  icon?: React.ComponentType<{ className?: string }>
+}
+
 interface DataTableFacetedFilterProps<TData extends RowData, TValue> {
   column?: Column<DataTableFeatures, TData, TValue>
   title?: string
-  options: {
-    label: string
-    value: string
-    icon?: React.ComponentType<{ className?: string }>
-  }[]
+  options: readonly DataTableFacetedFilterOption[] | DataTableFacetedFilterOption[]
 }
 
 export function DataTableFacetedFilter<TData extends RowData, TValue>({

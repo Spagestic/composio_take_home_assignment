@@ -64,7 +64,11 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   )
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+interface TableHeadProps extends React.ComponentProps<"th"> {
+  className?: string
+}
+
+function TableHead({ className, ...props }: TableHeadProps) {
   return (
     <th
       data-slot="table-head"
@@ -77,7 +81,11 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   )
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+interface TableCellProps extends React.ComponentProps<"td"> {
+  className?: string
+}
+
+function TableCell({ className, ...props }: TableCellProps) {
   return (
     <td
       data-slot="table-cell"

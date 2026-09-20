@@ -24,6 +24,7 @@ import {
   AUTH_METHODS,
   BUILDABILITY,
   CATEGORIES,
+  RESEARCH_STATUSES,
 } from "./data"
 
 type Updater<T> = T | ((old: T) => T)
@@ -59,6 +60,7 @@ export const dataTableSearchParams = {
   auth: parseAsArrayOf(parseAsStringLiteral(AUTH_METHODS)).withDefault([]),
   access: parseAsArrayOf(parseAsStringLiteral(ACCESS_MODELS)).withDefault([]),
   verdict: parseAsArrayOf(parseAsStringLiteral(BUILDABILITY)).withDefault([]),
+  status: parseAsArrayOf(parseAsStringLiteral(RESEARCH_STATUSES)).withDefault([]),
   sort: parseAsArrayOf(parseAsColumnSort).withDefault([]),
   pageIndex: parseAsIndex.withDefault(0),
   pageSize: parseAsInteger.withDefault(10),
@@ -105,12 +107,16 @@ export function useDataTableSearchParams() {
     if (params.verdict.length) {
       filters.push({ id: "buildability", value: params.verdict })
     }
+    if (params.status.length) {
+      filters.push({ id: "researchStatus", value: params.status })
+    }
     return filters
   }, [
     params.access,
     params.auth,
     params.category,
     params.name,
+    params.status,
     params.verdict,
   ])
   const columnVisibility = useMemo<ColumnVisibilityState>(
@@ -149,6 +155,8 @@ export function useDataTableSearchParams() {
         access: getFilterValue<typeof params.access>(next, "access") ?? [],
         verdict:
           getFilterValue<typeof params.verdict>(next, "buildability") ?? [],
+        status:
+          getFilterValue<typeof params.status>(next, "researchStatus") ?? [],
         pageIndex: 0,
       })
     },
@@ -157,6 +165,7 @@ export function useDataTableSearchParams() {
       params.access,
       params.auth,
       params.category,
+      params.status,
       params.verdict,
       setParams,
     ]
