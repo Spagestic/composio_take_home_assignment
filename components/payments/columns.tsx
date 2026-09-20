@@ -56,6 +56,7 @@ export const columns = columnHelper.columns([
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
+    filterFn: "arrHas",
     cell: ({ row }) => {
       const status = row.getValue("status") as Payment["status"]
       return (

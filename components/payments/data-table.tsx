@@ -10,6 +10,9 @@ import {
   type SortingState,
 } from "@tanstack/react-table"
 
+import { X } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Table,
@@ -20,6 +23,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import {
+  DataTableFacetedFilter,
+  statusFilterOptions,
+} from "./data-table-faceted-filter"
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableViewOptions } from "./data-table-view-options"
 import { features, type DataTableFeatures } from "./data-table-features"
@@ -59,7 +66,7 @@ export function DataTable<TData extends RowData>({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Filter emails..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
@@ -68,6 +75,22 @@ export function DataTable<TData extends RowData>({
           }
           className="max-w-sm"
         />
+        {table.getColumn("status") ? (
+          <DataTableFacetedFilter
+            column={table.getColumn("status")}
+            title="Status"
+            options={[...statusFilterOptions]}
+          />
+        ) : null}
+        {table.state.columnFilters.length > 0 ? (
+          <Button
+            variant="ghost"
+            onClick={() => table.resetColumnFilters()}
+          >
+            Reset
+            <X data-icon="inline-end" />
+          </Button>
+        ) : null}
         <DataTableViewOptions table={table} />
       </div>
       <div className="overflow-hidden rounded-md border">
