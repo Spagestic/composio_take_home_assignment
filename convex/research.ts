@@ -52,16 +52,16 @@ export const researchApp = workflow
         { retry: { maxAttempts: 3, initialBackoffMs: 1000, base: 2 } }
       );
 
-      // 3. Extract structured research findings with Mistral
+      // 3. Extract structured research findings with Gemini
       const findings = await step.runAction(
-        internal.mistral.extractResearchFindings,
+        internal.extract.extractResearchFindings,
         {
           name: app.name,
           website: app.website,
           category: app.category,
           contextText: searchResult.contextText,
         },
-        { retry: { maxAttempts: 2, initialBackoffMs: 1000, base: 2 } }
+        { retry: { maxAttempts: 4, initialBackoffMs: 20000, base: 2 } }
       );
 
       // 4. Update the app document in the database
@@ -118,18 +118,25 @@ export const startResearch = mutation({
   returns: v.string(),
   handler: async (ctx, args): Promise<string> => {
     // Optimistically mark as queued in database
-    await ctx.db
+    const existing = await ctx.db
       .query("apps")
       .withIndex("by_rank", (q) => q.eq("rank", args.rank))
-      .unique()
-      .then(async (app) => {
-        if (app) {
-          await ctx.db.patch(app._id, {
-            researchStatus: "queued",
-            researchError: null,
-          });
-        }
-      });
+      .unique();
+
+    if (!existing) {
+      throw new Error(`App with rank ${args.rank} not found`);
+    }
+
+    if (existing.researchStatus === "queued" || existing.researchStatus === "running") {
+      throw new Error(
+        `${existing.name} is already being researched. Wait for it to finish before starting another run.`
+      );
+    }
+
+    await ctx.db.patch(existing._id, {
+      researchStatus: "queued",
+      researchError: null,
+    });
 
     const workflowId: string = await workflow.start(
       ctx,
@@ -137,21 +144,12 @@ export const startResearch = mutation({
       { rank: args.rank }
     );
 
-    // Save workflowId to the app document and append to history
-    await ctx.db
-      .query("apps")
-      .withIndex("by_rank", (q) => q.eq("rank", args.rank))
-      .unique()
-      .then(async (app) => {
-        if (app) {
-          const existingIds = app.workflowIds ?? (app.workflowId ? [app.workflowId] : []);
-          const updatedIds = [workflowId, ...existingIds.filter((id) => id !== workflowId)];
-          await ctx.db.patch(app._id, {
-            workflowId,
-            workflowIds: updatedIds,
-          });
-        }
-      });
+    const existingIds =
+      existing.workflowIds ?? (existing.workflowId ? [existing.workflowId] : []);
+    await ctx.db.patch(existing._id, {
+      workflowId,
+      workflowIds: [workflowId, ...existingIds.filter((id) => id !== workflowId)],
+    });
 
     return workflowId;
   },

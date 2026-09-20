@@ -24,7 +24,7 @@ function getStepDisplayName(rawName?: string) {
   if (rawName.includes("getByRank")) return "1. Fetch App Metadata"
   if (rawName.includes("setResearchStatus")) return "Update Research Status"
   if (rawName.includes("searchAppDocs")) return "2. Exa Neural Search (Docs & Auth)"
-  if (rawName.includes("extractResearchFindings")) return "3. Mistral Reasoning & Extraction"
+  if (rawName.includes("extractResearchFindings")) return "3. Gemini Reasoning & Extraction"
   if (rawName.includes("updateResearch")) return "4. Save Findings to Database"
   return rawName
 }

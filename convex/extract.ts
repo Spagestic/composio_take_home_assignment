@@ -53,6 +53,36 @@ export const researchExtractionSchema = z.object({
 
 export type ResearchExtraction = z.infer<typeof researchExtractionSchema>;
 
+function isTransientLlmError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /rate limit|429|too many requests|quota|high demand|try again later|resource exhausted|overloaded|unavailable|503|529/i.test(
+    message
+  );
+}
+
+async function withSlowBackoff<T>(fn: () => Promise<T>): Promise<T> {
+  const maxAttempts = 6;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (!isTransientLlmError(error) || attempt === maxAttempts) {
+        throw error;
+      }
+      const waitMs = Math.min(120_000, 15_000 * 2 ** (attempt - 1));
+      console.warn(
+        `Gemini overloaded or rate-limited (attempt ${attempt}/${maxAttempts}); waiting ${waitMs}ms`
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+
+  throw lastError;
+}
+
 export const extractResearchFindings = internalAction({
   args: {
     name: v.string(),
@@ -83,13 +113,15 @@ ${args.contextText.slice(0, 20000)}
 Analyze this context thoroughly and extract the exact structured evaluation findings matching the schema.
 Only return factual, verified conclusions supported by the documentation context.`;
 
-    const findings = await generateStructured({
-      schema: researchExtractionSchema,
-      prompt,
-      system:
-        "You are an expert AI product ops and API integration engineer analyzing developer platforms for agent toolkits.",
-      temperature: 0.1,
-    });
+    const findings = await withSlowBackoff(() =>
+      generateStructured({
+        schema: researchExtractionSchema,
+        prompt,
+        system:
+          "You are an expert AI product ops and API integration engineer analyzing developer platforms for agent toolkits.",
+        temperature: 0.1,
+      })
+    );
 
     return findings;
   },
