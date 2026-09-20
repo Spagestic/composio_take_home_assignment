@@ -1,3 +1,5 @@
+import { Suspense } from "react"
+
 import { columns } from "@/components/table/columns"
 import { DataTable } from "@/components/table/data-table"
 import { apps, type AppResearch } from "@/components/table/data"
@@ -11,7 +13,9 @@ export default async function Page() {
 
   return (
     <div className="container mx-auto py-10">
-      <DataTable columns={columns} data={data} />
+      <Suspense>
+        <DataTable columns={columns} data={data} />
+      </Suspense>
     </div>
   )
 }

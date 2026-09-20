@@ -4,10 +4,7 @@ import * as React from "react"
 import {
   useTable,
   type ColumnDef,
-  type ColumnFiltersState,
-  type ColumnVisibilityState,
   type RowData,
-  type SortingState,
 } from "@tanstack/react-table"
 
 import { X } from "lucide-react"
@@ -33,6 +30,7 @@ import {
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableViewOptions } from "./data-table-view-options"
 import { features, type DataTableFeatures } from "./data-table-features"
+import { useDataTableSearchParams } from "./search-params"
 
 interface DataTableProps<TData extends RowData & { rank: number }> {
   columns: ColumnDef<DataTableFeatures, TData>[]
@@ -43,25 +41,32 @@ export function DataTable<TData extends RowData & { rank: number }>({
   columns,
   data,
 }: DataTableProps<TData>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  )
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<ColumnVisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const {
+    sorting,
+    pagination,
+    columnFilters,
+    columnVisibility,
+    onSortingChange,
+    onPaginationChange,
+    onColumnFiltersChange,
+    onColumnVisibilityChange,
+  } = useDataTableSearchParams()
 
   const table = useTable({
     features,
     data,
     columns,
     getRowId: (row) => String(row.rank),
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
+    onSortingChange,
+    onPaginationChange,
+    onColumnFiltersChange,
+    onColumnVisibilityChange,
     onRowSelectionChange: setRowSelection,
+    autoResetPageIndex: false,
     state: {
       sorting,
+      pagination,
       columnFilters,
       columnVisibility,
       rowSelection,
