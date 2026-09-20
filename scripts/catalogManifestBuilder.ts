@@ -6,13 +6,13 @@ import {
   parseComposioMarkdownHeader,
   getAbsenceReason,
   buildCanonicalDocsUrl,
-} from "./catalogParser"
+} from "../convex/catalogParser"
 
 const DATA_DIR = path.resolve(process.cwd(), "data")
 
 /**
  * Builds the complete 100-app Composio catalog baseline by reading `data/*.md` directly.
- * Can be run in node/script environments or imported in tests and seeds.
+ * Runs in Node/bun scripts only — not bundled by Convex.
  */
 export function buildComposioCatalogManifest(): ComposioCatalogEntry[] {
   const manifest: ComposioCatalogEntry[] = []

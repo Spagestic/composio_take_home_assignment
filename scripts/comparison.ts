@@ -1,5 +1,5 @@
 import { type AppResearch, type AuthMethod } from "../components/table/data"
-import { type ComposioCatalogEntry } from "./catalogParser"
+import { type ComposioCatalogEntry } from "../convex/catalogParser"
 
 export type ComparisonStatus = "match" | "mismatch" | "not_researched" | "not_applicable"
 
@@ -8,15 +8,12 @@ export interface AppCatalogComparison {
   appName: string
   inCatalog: boolean
   researchStatus: string
-  // Auth comparison
   authStatus: ComparisonStatus
   catalogAuth: string | null
   agentAuthMethods: AuthMethod[] | null
-  // Toolkit type comparison (e.g. MCP-only toolkits)
   mcpStatus: ComparisonStatus
   catalogKind: "rest" | "mcp" | null
   agentHasMcp: boolean | null
-  // Overall baseline consistency
   catalogPresenceStatus: ComparisonStatus
   notes: string[]
 }
@@ -58,15 +55,12 @@ export function compareAppWithBaseline(
   const isResearched = !!(app.buildability && app.researchStatus !== "failed")
   const notes: string[] = []
 
-  // Check 1: Catalog Presence consistency
-  // If app is not in catalog (one of 33), agent should NOT claim an official Composio toolkit already exists
   let catalogPresenceStatus: ComparisonStatus = "match"
   if (!inCatalog) {
     catalogPresenceStatus = "match"
     notes.push("App is part of the 33 absent set.")
   }
 
-  // Check 2: Auth comparison
   let authStatus: ComparisonStatus = "not_researched"
   if (!isResearched) {
     authStatus = "not_researched"
@@ -92,7 +86,6 @@ export function compareAppWithBaseline(
     }
   }
 
-  // Check 3: MCP toolkit type alignment
   let mcpStatus: ComparisonStatus = "not_researched"
   if (!isResearched) {
     mcpStatus = "not_researched"

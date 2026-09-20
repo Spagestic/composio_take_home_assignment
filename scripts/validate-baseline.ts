@@ -1,6 +1,6 @@
 import { apps } from "../components/table/data"
-import { buildComposioCatalogManifest } from "../convex/catalogManifestBuilder"
-import { compareAppWithBaseline } from "../convex/comparison"
+import { buildComposioCatalogManifest } from "./catalogManifestBuilder"
+import { compareAppWithBaseline } from "./comparison"
 
 console.log("=== COMPOSIO CATALOG BASELINE VALIDATION ===")
 
