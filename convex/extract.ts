@@ -10,7 +10,11 @@ import {
   apiStyleValidator,
   authMethodValidator,
   buildabilityValidator,
+  catalogComparisonStatusValidator,
   citationsValidator,
+  fieldCheckValidator,
+  verificationConfidenceValidator,
+  verificationResultValidator,
 } from "./schema";
 
 export const researchExtractionSchema = z.object({
@@ -137,5 +141,113 @@ Only return factual, verified conclusions supported by the documentation context
     );
 
     return findings;
+  },
+});
+
+export const verificationLlmSchema = z.object({
+  confidence: z
+    .enum(["high", "medium", "low"])
+    .describe("Overall confidence in the findings given primary documentation"),
+  summary: z
+    .string()
+    .describe("A crisp 1-2 sentence assessment of factual agreement between findings and docs"),
+  fieldChecks: z
+    .array(
+      z.object({
+        field: z.string().describe("Field checked, e.g. authMethods, access, apiStyles, hasOfficialMcp, buildability"),
+        original: z.string().describe("Original value string representation"),
+        verified: z.boolean().describe("Whether the primary docs confirm this field"),
+        corrected: z.string().nullable().optional().describe("Corrected value if original was inaccurate"),
+        note: z.string().describe("Brief justification citing the documentation"),
+      })
+    )
+    .describe("Per-field cross-check against the primary documentation"),
+  revisedAuthMethods: z
+    .array(z.enum(["oauth2", "api_key", "basic", "token", "other"]))
+    .optional()
+    .describe("Corrected authMethods if original was flawed, else omitted"),
+  revisedAccess: z
+    .enum(["self_serve", "paid_plan", "admin_approval", "partnership", "unknown"])
+    .optional()
+    .describe("Corrected access model if original was flawed, else omitted"),
+  revisedBuildability: z
+    .enum(["ready", "caveats", "blocked", "unknown"])
+    .optional()
+    .describe("Corrected buildability if original was flawed, else omitted"),
+});
+
+export const verifyResearchFindings = internalAction({
+  args: {
+    name: v.string(),
+    website: v.string(),
+    category: v.string(),
+    docsUrl: v.union(v.string(), v.null()),
+    primaryDocsContent: v.string(),
+    firstPassFindings: v.object({
+      oneLiner: v.string(),
+      authMethods: v.array(authMethodValidator),
+      access: accessModelValidator,
+      apiStyles: v.array(apiStyleValidator),
+      apiBreadth: apiBreadthValidator,
+      hasOfficialMcp: v.boolean(),
+      buildability: buildabilityValidator,
+      blocker: v.union(v.string(), v.null()),
+    }),
+  },
+  returns: v.object({
+    confidence: verificationConfidenceValidator,
+    summary: v.string(),
+    fieldChecks: v.array(fieldCheckValidator),
+    revisedAuthMethods: v.optional(v.array(authMethodValidator)),
+    revisedAccess: v.optional(accessModelValidator),
+    revisedBuildability: v.optional(buildabilityValidator),
+  }),
+  handler: async (_ctx, args) => {
+    const prompt = `You are a Senior Product Ops Quality Auditor verifying an AI agent's initial research findings on "${args.name}".
+
+Initial Research Findings:
+- One-liner: "${args.firstPassFindings.oneLiner}"
+- Auth methods: ${JSON.stringify(args.firstPassFindings.authMethods)}
+- Access model: ${args.firstPassFindings.access}
+- API styles: ${JSON.stringify(args.firstPassFindings.apiStyles)}
+- API breadth: ${args.firstPassFindings.apiBreadth}
+- Has official MCP: ${args.firstPassFindings.hasOfficialMcp}
+- Buildability: ${args.firstPassFindings.buildability}
+- Blocker: ${args.firstPassFindings.blocker ?? "none"}
+
+Primary Documentation Text (${args.docsUrl ?? "search snippet"}):
+---
+${args.primaryDocsContent.slice(0, 16000)}
+---
+
+Cross-check each field against the primary documentation.
+- If primary documentation confirms the finding, mark verified=true.
+- If primary documentation shows the agent hallucinated or got auth/access/buildability wrong, mark verified=false, provide the corrected value, and supply the revised enum in revisedAuthMethods/revisedAccess/revisedBuildability.
+- Provide a realistic confidence (high / medium / low). If documentation is sparse, set medium or low.`;
+
+    const result = await withSlowBackoff(() =>
+      generateStructured({
+        schema: verificationLlmSchema,
+        prompt,
+        system:
+          "You are a rigorous verification auditor who catches hallucinations, confirms evidence, and rates factual confidence.",
+        temperature: 0.1,
+      })
+    );
+
+    return {
+      confidence: result.confidence,
+      summary: result.summary,
+      fieldChecks: result.fieldChecks.map((f) => ({
+        field: f.field,
+        original: f.original,
+        verified: f.verified,
+        corrected: f.corrected ?? null,
+        note: f.note,
+      })),
+      revisedAuthMethods: result.revisedAuthMethods,
+      revisedAccess: result.revisedAccess,
+      revisedBuildability: result.revisedBuildability,
+    };
   },
 });

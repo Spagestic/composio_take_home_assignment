@@ -92,3 +92,52 @@ export const searchAppDocs = internalAction({
     };
   },
 });
+
+export const fetchDocsContent = internalAction({
+  args: {
+    url: v.string(),
+  },
+  returns: v.object({
+    url: v.string(),
+    text: v.string(),
+    success: v.boolean(),
+  }),
+  handler: async (_ctx, args) => {
+    if (!args.url || !args.url.startsWith("http")) {
+      return { url: args.url, text: "", success: false };
+    }
+
+    try {
+      const body = {
+        urls: [args.url],
+        text: { maxCharacters: 12000 },
+      };
+
+      const res = await fetch(`${EXA_BASE}/contents`, {
+        method: "POST",
+        headers: {
+          "x-api-key": getExaApiKey(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        return { url: args.url, text: "", success: false };
+      }
+
+      const data = (await res.json()) as {
+        results?: { url?: string; text?: string }[];
+      };
+      const text = data.results?.[0]?.text ?? "";
+      return {
+        url: args.url,
+        text,
+        success: text.length > 0,
+      };
+    } catch (err) {
+      console.warn(`Failed to fetch docs content from ${args.url}:`, err);
+      return { url: args.url, text: "", success: false };
+    }
+  },
+});
