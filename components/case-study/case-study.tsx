@@ -634,9 +634,9 @@ function Header() {
       </h1>
       <p className="text-muted-foreground">
         A two-pass research agent evaluated 100 apps across 10 categories for
-        buildability as Composio toolkits â€” auth, access model, API surface,
-        official MCP support â€” then a verifier pass and a deterministic
-        catalog cross-check scored its own work.
+        buildability as Composio toolkits, auth, access model, API surface,
+        official MCP support, then a verifier pass and a deterministic catalog
+        cross-check scored its own work.
       </p>
     </div>
   )
