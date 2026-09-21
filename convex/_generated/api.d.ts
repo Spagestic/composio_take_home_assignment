@@ -19,6 +19,7 @@ import type * as llm from "../llm.js";
 import type * as research from "../research.js";
 import type * as researchSteps from "../researchSteps.js";
 import type * as seed from "../seed.js";
+import type * as structuredActions from "../structuredActions.js";
 
 import type {
   ApiFromModules,
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   research: typeof research;
   researchSteps: typeof researchSteps;
   seed: typeof seed;
+  structuredActions: typeof structuredActions;
 }>;
 
 /**
