@@ -2,13 +2,7 @@
 
 import * as React from "react"
 import { createColumnHelper } from "@tanstack/react-table"
-import {
-  MoreHorizontal,
-  Play,
-  Loader2,
-  RefreshCw,
-  Eye,
-} from "lucide-react"
+import { MoreHorizontal, Play, Loader2, RefreshCw, Eye } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,10 +27,13 @@ import { DataTableColumnHeaderFilter } from "./data-table-column-header-filter"
 import { type DataTableFeatures } from "./data-table-features"
 import {
   accessLabels,
+  apiBreadthLabels,
+  apiStyleLabels,
   authLabels,
   buildabilityLabels,
   categoryLabels,
   ACCESS_MODELS,
+  API_STYLES,
   AUTH_METHODS,
   BUILDABILITY,
   CATEGORIES,
@@ -56,6 +53,11 @@ const authOptions = AUTH_METHODS.map((value) => ({
 
 const accessOptions = ACCESS_MODELS.map((value) => ({
   label: accessLabels[value],
+  value,
+}))
+
+const apiStyleOptions = API_STYLES.map((value) => ({
+  label: apiStyleLabels[value],
   value,
 }))
 
@@ -108,7 +110,7 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
       cell: ({ row }) => {
         const app = row.original
         return (
-          <div className="flex max-w-[10rem] min-w-0 flex-col gap-0.5 sm:max-w-[12rem]">
+          <div className="flex max-w-40 min-w-0 flex-col gap-0.5 sm:max-w-48">
             <button
               type="button"
               onClick={() => handlers.onOpenAppDetail?.(app)}
@@ -194,6 +196,37 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
           return <EmptyCell />
         }
         return accessLabels[access]
+      },
+    }),
+    columnHelper.accessor((row) => row.apiStyles ?? [], {
+      id: "apiStyles",
+      header: ({ column }) => (
+        <DataTableColumnHeaderFilter
+          column={column}
+          title="API surface"
+          options={apiStyleOptions}
+        />
+      ),
+      enableSorting: false,
+      filterFn: "hasAny",
+      meta: {
+        className: "hidden lg:table-cell",
+      },
+      cell: ({ row }) => {
+        const styles = row.original.apiStyles
+        const breadth = row.original.apiBreadth
+        if ((!styles || styles.length === 0) && !breadth) {
+          return <EmptyCell />
+        }
+        return (
+          <div className="flex min-w-24 flex-wrap items-center gap-1">
+            {styles?.map((style) => (
+              <Badge key={style} variant="outline">
+                {apiStyleLabels[style]}
+              </Badge>
+            ))}
+          </div>
+        )
       },
     }),
     columnHelper.accessor("hasOfficialMcp", {

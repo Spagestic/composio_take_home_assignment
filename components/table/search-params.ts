@@ -21,6 +21,7 @@ import {
 
 import {
   ACCESS_MODELS,
+  API_STYLES,
   AUTH_METHODS,
   BUILDABILITY,
   CATEGORIES,
@@ -59,8 +60,11 @@ export const dataTableSearchParams = {
   category: parseAsArrayOf(parseAsStringLiteral(CATEGORIES)).withDefault([]),
   auth: parseAsArrayOf(parseAsStringLiteral(AUTH_METHODS)).withDefault([]),
   access: parseAsArrayOf(parseAsStringLiteral(ACCESS_MODELS)).withDefault([]),
+  apiSurface: parseAsArrayOf(parseAsStringLiteral(API_STYLES)).withDefault([]),
   verdict: parseAsArrayOf(parseAsStringLiteral(BUILDABILITY)).withDefault([]),
-  status: parseAsArrayOf(parseAsStringLiteral(RESEARCH_STATUSES)).withDefault([]),
+  status: parseAsArrayOf(parseAsStringLiteral(RESEARCH_STATUSES)).withDefault(
+    []
+  ),
   sort: parseAsArrayOf(parseAsColumnSort).withDefault([]),
   pageIndex: parseAsIndex.withDefault(0),
   pageSize: parseAsInteger.withDefault(10),
@@ -104,6 +108,9 @@ export function useDataTableSearchParams() {
     if (params.access.length) {
       filters.push({ id: "access", value: params.access })
     }
+    if (params.apiSurface.length) {
+      filters.push({ id: "apiStyles", value: params.apiSurface })
+    }
     if (params.verdict.length) {
       filters.push({ id: "buildability", value: params.verdict })
     }
@@ -113,6 +120,7 @@ export function useDataTableSearchParams() {
     return filters
   }, [
     params.access,
+    params.apiSurface,
     params.auth,
     params.category,
     params.name,
@@ -150,9 +158,12 @@ export function useDataTableSearchParams() {
       const next = applyUpdater(updater, columnFilters)
       void setParams({
         name: getFilterValue<string>(next, "name") ?? "",
-        category: getFilterValue<typeof params.category>(next, "category") ?? [],
+        category:
+          getFilterValue<typeof params.category>(next, "category") ?? [],
         auth: getFilterValue<typeof params.auth>(next, "authMethods") ?? [],
         access: getFilterValue<typeof params.access>(next, "access") ?? [],
+        apiSurface:
+          getFilterValue<typeof params.apiSurface>(next, "apiStyles") ?? [],
         verdict:
           getFilterValue<typeof params.verdict>(next, "buildability") ?? [],
         status:
@@ -163,6 +174,7 @@ export function useDataTableSearchParams() {
     [
       columnFilters,
       params.access,
+      params.apiSurface,
       params.auth,
       params.category,
       params.status,
