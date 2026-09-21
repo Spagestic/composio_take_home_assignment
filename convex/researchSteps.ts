@@ -44,7 +44,7 @@ export const searchAppDocs = internalAction({
       query,
       type: "auto",
       numResults: 5,
-      text: { maxCharacters: 4000 },
+      text: { maxCharacters: 2500 },
       highlights: { numSentences: 3 },
     };
 
@@ -110,7 +110,7 @@ export const fetchDocsContent = internalAction({
     try {
       const body = {
         urls: [args.url],
-        text: { maxCharacters: 12000 },
+        text: { maxCharacters: 8000 },
       };
 
       const res = await fetch(`${EXA_BASE}/contents`, {
