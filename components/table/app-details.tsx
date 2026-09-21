@@ -15,9 +15,11 @@ import { api } from "@/convex/_generated/api"
 
 import {
   SheetHeaderSection,
+  VerdictLine,
   AgentFindings,
-  WorkflowRunList,
+  VerificationSummary,
   ComposioCatalogBaseline,
+  WorkflowRunList,
 } from "./app-detail"
 
 interface AppDetailSheetProps {
@@ -75,16 +77,22 @@ export function AppDetailSheet({
           />
         </DialogHeader>
 
-        <div className="subtle-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6">
-          {/* Ground Truth / Composio Baseline Section */}
-          <ComposioCatalogBaseline app={app} />
+        <div className="subtle-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-5">
+          {/* Quick Verdict Banner */}
+          <VerdictLine app={app} />
 
-          <Separator />
-
-          {/* Core Agent Findings Section */}
+          {/* Primary Agent Findings */}
           <AgentFindings app={app} />
 
-          <Separator />
+          {/* Accuracy & Verification (if researched) */}
+          <VerificationSummary app={app} />
+
+          <Separator className="my-0.5 opacity-60" />
+
+          {/* Composio Baseline (reference ground truth) */}
+          <ComposioCatalogBaseline app={app} />
+
+          <Separator className="my-0.5 opacity-60" />
 
           {/* Research Run History & Execution Traces */}
           <WorkflowRunList

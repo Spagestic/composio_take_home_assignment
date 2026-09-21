@@ -171,9 +171,9 @@ export function WorkflowRunList({
     workflowIds.length > 0 ? { workflowIds } : "skip"
   )
 
-  // Default expand latest run (index 0)
+  // Collapse by default; only expand when actively running or user clicks
   const [expandedWorkflowId, setExpandedWorkflowId] = React.useState<string | null>(
-    workflowIds[0] ?? null
+    isRunning ? (workflowIds[0] ?? null) : null
   )
 
   // Keep track of the first workflow ID to initialize expanded state once or when a new run starts
@@ -186,12 +186,12 @@ export function WorkflowRunList({
       setExpandedWorkflowId(currentFirstId)
       previousFirstIdRef.current = currentFirstId
     } else if (expandedWorkflowId && !workflowIds.includes(expandedWorkflowId)) {
-      // If the currently expanded run was deleted/removed from list
       setExpandedWorkflowId(null)
     }
   }, [workflowIds, expandedWorkflowId])
 
-  // Enhance run items with app-level status for the latest run if workflow table was cleared
+  // Enhance run items: if an older run has status 'running' but the app is already completed,
+  // that older run was superseded and completed or stopped, so mark it completed to avoid permanent 'Running' spinners.
   const resolvedRuns = React.useMemo(() => {
     const list =
       runs && runs.length > 0
@@ -203,7 +203,7 @@ export function WorkflowRunList({
           }))
 
     return list.map((r, idx) => {
-      // If it's the latest run and the app itself is recorded as failed or completed
+      // Latest run
       if (idx === 0) {
         let status = r.status
         let error = r.error
@@ -214,6 +214,11 @@ export function WorkflowRunList({
           status = "completed"
         }
         return { ...r, status, error }
+      }
+
+      // Older superseded runs
+      if (r.status === "running" && appStatus === "completed") {
+        return { ...r, status: "completed" }
       }
       return r
     })

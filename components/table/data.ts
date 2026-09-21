@@ -98,6 +98,22 @@ export const buildabilityLabels: Record<Buildability, string> = {
   unknown: "Unknown",
 }
 
+export const apiStyleLabels: Record<ApiStyle, string> = {
+  rest: "REST",
+  graphql: "GraphQL",
+  sdk: "SDK",
+  mcp: "MCP",
+  none: "None",
+  unknown: "Unknown",
+}
+
+export const apiBreadthLabels: Record<ApiBreadth, string> = {
+  thin: "Thin",
+  moderate: "Moderate",
+  broad: "Broad",
+  unknown: "Unknown",
+}
+
 export const researchStatusLabels: Record<ResearchStatus, string> = {
   not_started: "Not Researched",
   queued: "Queued",
