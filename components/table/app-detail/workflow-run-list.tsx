@@ -67,9 +67,24 @@ function RunItem({
     return [...workflowSteps].sort((a, b) => (a.stepNumber ?? 0) - (b.stepNumber ?? 0))
   }, [workflowSteps])
 
-  const isFailed = run.status === "failed" || !!run.error
+  const hasFailedStep = sortedSteps.some((stepRecord) => {
+    const step = stepRecord.step ?? stepRecord
+    const runResult = step.runResult ?? {}
+    return runResult.kind === "failed" || !!runResult.error
+  })
+
+  const normalizedStatus = run.status.toLowerCase()
+  const isFailed =
+    normalizedStatus === "failed" ||
+    normalizedStatus === "canceled" ||
+    normalizedStatus === "cancelled" ||
+    hasFailedStep ||
+    !!run.error
   const isInProgress =
-    run.status === "running" || run.status === "queued" || (!run.completedAt && !isFailed)
+    normalizedStatus === "running" ||
+    normalizedStatus === "queued" ||
+    normalizedStatus === "pending" ||
+    normalizedStatus === "in_progress"
 
   return (
     <div className="rounded-lg border bg-card text-card-foreground text-xs overflow-hidden transition-all">
@@ -190,8 +205,8 @@ export function WorkflowRunList({
     }
   }, [workflowIds, expandedWorkflowId])
 
-  // Enhance run items: if an older run has status 'running' but the app is already completed,
-  // that older run was superseded and completed or stopped, so mark it completed to avoid permanent 'Running' spinners.
+  // Only the newest workflow can still be active. A newer run supersedes every
+  // older one, so stale backend "running" states must not produce permanent spinners.
   const resolvedRuns = React.useMemo(() => {
     const list =
       runs && runs.length > 0
@@ -217,8 +232,17 @@ export function WorkflowRunList({
       }
 
       // Older superseded runs
-      if (r.status === "running" && appStatus === "completed") {
-        return { ...r, status: "completed" }
+      const status = r.status.toLowerCase()
+      if (
+        status === "running" ||
+        status === "queued" ||
+        status === "pending" ||
+        status === "in_progress"
+      ) {
+        return {
+          ...r,
+          status: r.error ? "failed" : "completed",
+        }
       }
       return r
     })

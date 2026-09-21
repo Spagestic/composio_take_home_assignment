@@ -210,10 +210,28 @@ export const getWorkflowRuns = query({
       args.workflowIds.map(async (workflowId) => {
         try {
           const runStatus: any = await workflow.status(ctx, workflowId as any);
+          const stepResult: any = await workflow.listSteps(ctx, workflowId as any);
+          const steps = Array.isArray(stepResult)
+            ? stepResult
+            : Array.isArray(stepResult?.page)
+              ? stepResult.page
+              : [];
+          const failedStep = steps.find((stepRecord: any) => {
+            const step = stepRecord?.step ?? stepRecord;
+            const runResult = step?.runResult ?? {};
+            return runResult.kind === "failed" || Boolean(runResult.error);
+          });
+
           if (!runStatus) {
             return {
               workflowId,
-              status: "unknown",
+              status: failedStep ? "failed" : "unknown",
+              error: failedStep
+                ? String(
+                    (failedStep.step ?? failedStep).runResult?.error ??
+                      "One or more workflow steps failed"
+                  )
+                : null,
             };
           }
 
@@ -237,8 +255,15 @@ export const getWorkflowRuns = query({
             error = String(runStatus.error);
           }
 
-          // If there is an error or it failed / canceled, normalize state
-          if (error && state !== "completed") {
+          if (failedStep) {
+            state = "failed";
+            error =
+              error ??
+              String(
+                (failedStep.step ?? failedStep).runResult?.error ??
+                  "One or more workflow steps failed"
+              );
+          } else if (error && state !== "completed") {
             state = "failed";
           }
 
