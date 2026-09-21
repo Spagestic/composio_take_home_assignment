@@ -139,6 +139,25 @@ export function CaseStudy() {
     [apps]
   )
 
+  const catalogOpportunity = React.useMemo(() => {
+    const buckets = {
+      in: { group: "In catalog", ready: 0, caveats: 0, blocked: 0, unknown: 0 },
+      out: {
+        group: "Not in catalog",
+        ready: 0,
+        caveats: 0,
+        blocked: 0,
+        unknown: 0,
+      },
+    }
+    for (const app of apps ?? []) {
+      const bucket = app.composioInCatalog ? buckets.in : buckets.out
+      const key = app.buildability ?? "unknown"
+      bucket[key] += 1
+    }
+    return [buckets.in, buckets.out]
+  }, [apps])
+
   if (!patterns) {
     return (
       <div className="flex flex-col gap-10">
@@ -175,24 +194,6 @@ export function CaseStudy() {
   const apiBreadth = Object.entries(patterns.apiBreadth).map(
     ([breadth, count]) => ({ breadth, count })
   )
-  const catalogOpportunity = React.useMemo(() => {
-    const buckets = {
-      in: { group: "In catalog", ready: 0, caveats: 0, blocked: 0, unknown: 0 },
-      out: {
-        group: "Not in catalog",
-        ready: 0,
-        caveats: 0,
-        blocked: 0,
-        unknown: 0,
-      },
-    }
-    for (const app of apps ?? []) {
-      const bucket = app.composioInCatalog ? buckets.in : buckets.out
-      const key = app.buildability ?? "unknown"
-      bucket[key] += 1
-    }
-    return [buckets.in, buckets.out]
-  }, [apps])
 
   return (
     <div className="flex flex-col gap-10">
