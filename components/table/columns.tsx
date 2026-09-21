@@ -7,8 +7,6 @@ import {
   Play,
   Loader2,
   RefreshCw,
-  CheckCircle2,
-  AlertCircle,
   Eye,
 } from "lucide-react"
 
@@ -38,12 +36,10 @@ import {
   authLabels,
   buildabilityLabels,
   categoryLabels,
-  researchStatusLabels,
   ACCESS_MODELS,
   AUTH_METHODS,
   BUILDABILITY,
   CATEGORIES,
-  RESEARCH_STATUSES,
   type Category,
   type AppResearch,
 } from "./data"
@@ -70,11 +66,6 @@ const mcpOptions = [
 
 const verdictOptions = BUILDABILITY.map((value) => ({
   label: buildabilityLabels[value],
-  value,
-}))
-
-const statusOptions = RESEARCH_STATUSES.map((value) => ({
-  label: researchStatusLabels[value],
   value,
 }))
 
@@ -245,47 +236,6 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
             {buildabilityLabels[verdict]}
           </Badge>
         )
-      },
-    }),
-    columnHelper.accessor((row) => row.researchStatus ?? "not_started", {
-      id: "researchStatus",
-      header: ({ column }) => (
-        <DataTableColumnHeaderFilter
-          column={column}
-          title="Status"
-          options={statusOptions}
-        />
-      ),
-      enableSorting: false,
-      filterFn: "hasAny",
-      cell: ({ row }) => {
-        const app = row.original
-        const status =
-          app.researchStatus ?? (app.buildability ? "completed" : "not_started")
-
-        if (status === "completed") {
-          return (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="size-3.5" /> Done
-            </span>
-          )
-        }
-        if (status === "running" || status === "queued") {
-          return (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400">
-              <Loader2 className="size-3.5 animate-spin" />
-              {status === "queued" ? "Queued" : "Researching"}
-            </span>
-          )
-        }
-        if (status === "failed") {
-          return (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive">
-              <AlertCircle className="size-3.5" /> Failed
-            </span>
-          )
-        }
-        return <span className="text-xs text-muted-foreground">Pending</span>
       },
     }),
     columnHelper.display({
