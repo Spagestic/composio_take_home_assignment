@@ -101,6 +101,19 @@ export const verificationResultValidator = v.object({
   catalogNotes: v.optional(v.union(v.string(), v.null())),
   correctionsApplied: v.number(),
 })
+export const auditVerdictValidator = v.union(
+  v.literal("accurate"),
+  v.literal("minor_errors"),
+  v.literal("major_errors")
+)
+
+export const auditValidator = v.object({
+  auditedAt: v.number(),
+  verdict: auditVerdictValidator,
+  hits: v.array(v.string()),
+  misses: v.array(v.string()),
+  notes: v.optional(v.union(v.string(), v.null())),
+})
 
 export const catalogBaselineValidator = v.object({
   rank: v.number(),
@@ -149,6 +162,7 @@ export const appDocValidator = v.object({
   sources: v.optional(v.union(v.array(sourceItemValidator), v.null())),
   citations: v.optional(v.union(citationsValidator, v.null())),
   verification: v.optional(v.union(verificationResultValidator, v.null())),
+  audit: v.optional(auditValidator),
   composioInCatalog: v.boolean(),
   composioSlug: v.union(v.string(), v.null()),
   composioToolkitKind: v.union(composioToolkitKindValidator, v.null()),
@@ -181,6 +195,7 @@ export default defineSchema({
     sources: v.optional(v.union(v.array(sourceItemValidator), v.null())),
     citations: v.optional(v.union(citationsValidator, v.null())),
     verification: v.optional(v.union(verificationResultValidator, v.null())),
+    audit: v.optional(auditValidator),
 
     // Ground truth from README & Composio catalog
     composioInCatalog: v.boolean(),

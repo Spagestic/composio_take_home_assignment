@@ -10,6 +10,7 @@
 
 import type * as analysis from "../analysis.js";
 import type * as apps from "../apps.js";
+import type * as audit from "../audit.js";
 import type * as catalog from "../catalog.js";
 import type * as catalogParser from "../catalogParser.js";
 import type * as chat from "../chat.js";
@@ -35,6 +36,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   analysis: typeof analysis;
   apps: typeof apps;
+  audit: typeof audit;
   catalog: typeof catalog;
   catalogParser: typeof catalogParser;
   chat: typeof chat;
