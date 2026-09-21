@@ -11,6 +11,8 @@
 import type * as apps from "../apps.js";
 import type * as catalog from "../catalog.js";
 import type * as catalogParser from "../catalogParser.js";
+import type * as chat from "../chat.js";
+import type * as chatActions from "../chatActions.js";
 import type * as exa from "../exa.js";
 import type * as extract from "../extract.js";
 import type * as llm from "../llm.js";
@@ -28,6 +30,8 @@ declare const fullApi: ApiFromModules<{
   apps: typeof apps;
   catalog: typeof catalog;
   catalogParser: typeof catalogParser;
+  chat: typeof chat;
+  chatActions: typeof chatActions;
   exa: typeof exa;
   extract: typeof extract;
   llm: typeof llm;

@@ -1,11 +1,11 @@
 import { google } from "@ai-sdk/google"
 
-import { generateText, Output } from "ai"
+import { generateText, Output, streamText } from "ai"
 
 import type { z } from "zod"
 
-// 3.8-flash was returning "high demand"; 2.5-flash is the stable Flash model for this pipeline.
-export const MODEL = google("gemini-2.5-flash")
+// Gemini 2.5 Flash is no longer available to new users; 3.6 Flash is the current Flash model.
+export const MODEL = google("gemini-3.6-flash")
 
 export async function generateStructured<T>(args: {
   schema: z.ZodType<T>
@@ -45,6 +45,22 @@ export async function generateMarkdown(args: {
   })
 
   return result.text
+}
+
+export function streamMarkdown(args: {
+  prompt: string
+  system?: string
+  temperature?: number
+}) {
+  return streamText({
+    model: MODEL,
+    prompt: args.prompt,
+    maxRetries: 0,
+    ...(args.system ? { system: args.system } : {}),
+    ...(args.temperature !== undefined
+      ? { temperature: args.temperature }
+      : {}),
+  })
 }
 
 export function today(): string {

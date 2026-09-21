@@ -179,4 +179,17 @@ export default defineSchema({
     .index("by_rank", ["rank"])
     .index("by_inCatalog", ["inCatalog"])
     .index("by_composioSlug", ["composioSlug"]),
+
+  chatMessages: defineTable({
+    sessionId: v.string(),
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    text: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("streaming"),
+      v.literal("done"),
+      v.literal("error")
+    ),
+    error: v.optional(v.string()),
+  }).index("by_session", ["sessionId"]),
 })
