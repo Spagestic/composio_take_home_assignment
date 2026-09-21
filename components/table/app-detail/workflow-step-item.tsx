@@ -11,6 +11,8 @@ import {
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { FormattedStepView } from "./step-formatters"
+import { StepErrorExplanation } from "./step-error-explanation"
 
 function formatDuration(
   startedAt?: number | null,
@@ -28,9 +30,13 @@ function getStepDisplayName(rawName?: string) {
   if (rawName.includes("setResearchStatus")) return "Update Research Status"
   if (rawName.includes("searchAppDocs"))
     return "2. Exa Neural Search (Docs & Auth)"
+  if (rawName.includes("fetchDocsContent"))
+    return "3. Fetch Primary Documentation"
   if (rawName.includes("extractResearchFindings"))
-    return "3. LLM Reasoning & Extraction"
-  if (rawName.includes("updateResearch")) return "4. Save Findings to Database"
+    return "4. LLM Reasoning & Extraction"
+  if (rawName.includes("verifyResearchFindings"))
+    return "5. LLM Audit & Verification"
+  if (rawName.includes("updateResearch")) return "6. Save Findings to Database"
   return rawName
 }
 
@@ -42,6 +48,8 @@ export function WorkflowStepItem({
   index: number
 }) {
   const [expanded, setExpanded] = React.useState(false)
+  const [showRaw, setShowRaw] = React.useState(false)
+
   // Support both direct step object (from workflow.listSteps) or nested stepRecord.step
   const step = stepRecord.step ?? stepRecord
   const runResult = step.runResult ?? {}
@@ -87,65 +95,56 @@ export function WorkflowStepItem({
       </button>
 
       {expanded && (
-        <div className="flex flex-col gap-2 border-t bg-muted/20 p-2.5 font-mono text-[11px]">
-          {/* Error Details */}
+        <div className="flex flex-col gap-2.5 border-t bg-muted/15 p-2.5 text-[11px]">
+          {/* Error Details with human explanation */}
           {runResult.error && (
-            <div className="rounded border border-destructive/30 bg-destructive/10 p-2 text-destructive">
-              <span className="mb-1 block font-bold">Error message:</span>
-              <pre className="font-sans text-[11px] leading-relaxed break-words whitespace-pre-wrap">
-                {typeof runResult.error === "string"
-                  ? runResult.error
-                  : JSON.stringify(runResult.error, null, 2)}
-              </pre>
-            </div>
+            <StepErrorExplanation error={runResult.error} />
           )}
 
-          {/* Sources summary if searchAppDocs */}
-          {runResult.returnValue?.sources &&
-            Array.isArray(runResult.returnValue.sources) && (
-              <div className="flex flex-col gap-1 font-sans">
-                <span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase">
-                  Extracted Sources ({runResult.returnValue.sources.length})
-                </span>
-                <ul className="flex flex-col gap-1">
-                  {runResult.returnValue.sources.map((s: any, idx: number) => (
-                    <li key={idx} className="truncate">
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-                      >
-                        {s.title || s.url}
-                        <ExternalLink className="size-2.5" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-          {/* Inputs summary */}
-          {step.args && (
-            <div>
-              <span className="mb-0.5 block text-[10px] font-semibold text-muted-foreground uppercase">
-                Inputs:
-              </span>
-              <pre className="subtle-scroll max-h-36 overflow-y-auto rounded bg-background p-2 text-[10px] leading-tight text-foreground">
-                {JSON.stringify(step.args, null, 2)}
-              </pre>
-            </div>
+          {/* Formatted View (Clean high-level UI) */}
+          {!showRaw && (
+            <FormattedStepView
+              stepName={step.name ?? ""}
+              args={step.args}
+              returnValue={runResult.returnValue}
+            />
           )}
 
-          {/* Outputs summary */}
-          {runResult.returnValue && (
-            <div>
-              <span className="mb-0.5 block text-[10px] font-semibold text-muted-foreground uppercase">
-                Output:
-              </span>
-              <pre className="subtle-scroll max-h-36 overflow-y-auto rounded bg-background p-2 text-[10px] leading-tight text-foreground">
-                {JSON.stringify(runResult.returnValue, null, 2)}
-              </pre>
+          {/* Raw JSON toggle */}
+          <div className="flex items-center justify-between pt-1 border-t border-border/40 text-[10px] text-muted-foreground font-mono">
+            <span>Payload details</span>
+            <button
+              type="button"
+              onClick={() => setShowRaw(!showRaw)}
+              className="text-primary hover:underline"
+            >
+              {showRaw ? "Show formatted" : "Show raw JSON"}
+            </button>
+          </div>
+
+          {showRaw && (
+            <div className="flex flex-col gap-2 font-mono text-[10px]">
+              {step.args && (
+                <div>
+                  <span className="mb-0.5 block font-semibold text-muted-foreground uppercase">
+                    Inputs:
+                  </span>
+                  <pre className="subtle-scroll max-h-36 overflow-y-auto rounded bg-background p-2 leading-tight text-foreground border border-border/40">
+                    {JSON.stringify(step.args, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {runResult.returnValue && (
+                <div>
+                  <span className="mb-0.5 block font-semibold text-muted-foreground uppercase">
+                    Output:
+                  </span>
+                  <pre className="subtle-scroll max-h-36 overflow-y-auto rounded bg-background p-2 leading-tight text-foreground border border-border/40">
+                    {JSON.stringify(runResult.returnValue, null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
           )}
         </div>
