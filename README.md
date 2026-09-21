@@ -1,34 +1,129 @@
 # Composio AI Product Ops Intern — take-home
 
-This repo is the take-home for the **Composio AI Product Ops Intern** role: a research agent that evaluates ~100 apps as potential agent toolkits (auth, self-serve vs gated, API surface, MCP, buildability), then a **single self-explanatory HTML case study** with findings, patterns, how the agent worked, and verification.
+Research agent that evaluates ~100 apps as potential Composio toolkits (auth, self-serve vs gated, API surface, MCP, buildability), then a case study of patterns and verification.
 
-**Primary filter:** budget **6–8 hours**. Reviewers care about the result and how clearly it is presented, not hours spent. Prefer submitting as early as possible (**&lt;8 hours after receiving**).
+**Status: Part 1 is complete.** The agent pipeline, Convex store, catalog baseline, and per-app table/detail UI exist and can be re-run. Part 2 is the reviewer-facing case study: patterns across all 100, a measured sample audit, and a live HTML page.
 
-## Context
+## What Part 1 covers
 
-Composio turns apps into tools that AI agents can call. Before building a toolkit for an app, they research it: what auth it uses, whether there is a self-serve path or it is partner-gated, what the API surface looks like, and whether it can be an MCP server or agent-callable skills. They do this across hundreds of apps. Doing it by hand does not scale. This assignment is a small, real version of that problem.
+For each app the agent captures:
 
-## The task
+- Category and a one-line description
+- Auth methods (OAuth2, API key, Basic, token, other)
+- Access model (self-serve, paid plan, admin approval, partnership)
+- API surface (REST / GraphQL / SDK / MCP, breadth)
+- Official MCP yes/no
+- Buildability (`ready` / `caveats` / `blocked`) plus a blocker if any
+- Docs URL, per-claim citations, evidence notes
+- Catalog cross-check against the `data/` Composio snapshot (67 in catalog, 33 absent)
 
-Given a list of 100 apps, research and capture for each:
+The UI is a sortable table of the 100 apps. Opening a row shows the verdict, findings, verification, catalog baseline, and workflow traces.
 
-- **Category** and what it does in one line.
-- **Auth method(s):** OAuth2, API key, Basic, token, or other.
-- **Self-serve vs gated:** can a developer get credentials themselves for free or on a trial, or does it need a paid plan, admin approval, or a partnership / contact-sales gate.
-- **API surface:** documented public REST / GraphQL, roughly how broad, and any existing MCP.
-- **Buildability verdict:** could this be an agent toolkit today, and the main blocker if not.
-- **Evidence:** the docs URL / article behind each answer.
-- and more as needed for a trustworthy row.
+## Stack
 
-Then, the actual point:
+- [Convex](https://convex.dev/) — database, workflow, actions
+- [Next.js](https://nextjs.org/) + React — table / case-study app
+- [Exa](https://exa.ai/) — docs search and page contents
+- Kimi K3 via Modal (OpenAI-compatible) — structured extraction and verify pass
+- [Tailwind](https://tailwindcss.com/) — UI
 
-- **Find the patterns.** Do not just produce 100 rows. Cluster the results and say what patterns you see (which auth dominates, which categories are self-serve vs gated, the most common blocker, where the easy wins are versus what needs outreach). Insight over raw table.
-- **Do it with an agent, not by hand.** Build an agent (or script / pipeline) that does the research across the 100. Using Composio's own SDK and MCP is in the spirit of the role. Explain what it does and where a human was needed.
-- **Verify accuracy.** Sample the 100, cross-check the agent's answers against real docs by hand, and report where it was right and wrong. Show how you know the findings are trustworthy. Build real verification loops (agent, browser-use, and other means) plus human checks, and show how accuracy moved from a lower first pass to a higher one because of those loops. **Accuracy is what matters most.**
+## How to run
 
-## The 100 apps (research set)
+```bash
+bun install
+bun run dev
+```
 
-A real mix: apps customers have actually requested, and well-known apps. Across 10 categories and every common auth pattern on purpose, so the interesting part is the patterns across all 100.
+That starts `convex dev` and `next dev` together. Open the app URL Next prints (usually `http://localhost:3000`).
+
+Use `npx convex dev` for the backend during development. Do **not** use `npx convex deploy` except for production.
+
+### Environment
+
+Copy into `.env.local` (values are not committed):
+
+```bash
+CONVEX_DEPLOYMENT=          # from `npx convex dev`
+NEXT_PUBLIC_CONVEX_URL=
+NEXT_PUBLIC_CONVEX_SITE_URL=
+
+EXA_API_KEY=
+MODAL_PROXY_TOKEN_ID=
+MODAL_PROXY_TOKEN_SECRET=
+```
+
+Modal env vars are set on the Convex deployment as well (`npx convex env set …`) so actions can call Kimi.
+
+### Seed (once per deployment)
+
+From the Convex dashboard or CLI:
+
+```bash
+npx convex run seed:seedAll
+# or separately:
+npx convex run catalog:seedCatalogBaseline '{"force":true}'
+```
+
+`data/` markdown snapshots are parsed into `composioCatalog`. Absence of a file is a real signal: the agent must not invent a Composio toolkit for those 33 apps.
+
+### Run the research agent
+
+1. Open `/`.
+2. Click an app row.
+3. Press **Run** / **Re-run**.
+4. Watch status on the table (`queued` → `running` → `completed` / `failed`).
+5. In the detail panel: verdict, findings, verify pass, catalog baseline, and expandable execution steps.
+
+Each run is a durable Convex workflow (`convex/research.ts`). Re-runs keep the last few workflow IDs for history.
+
+There is not yet a “research all 100” bulk trigger; Part 1 is per-app so you can inspect traces. Batching is Part 2.
+
+## Agent pipeline
+
+```
+load app
+  → Exa search (API-reference URLs ranked above OAuth-only pages)
+  → LLM pass 1: structured extraction (Kimi K3, JSON schema)
+  → fetch primary docs + auth page (skip JS-only junk)
+  → LLM pass 2: verify against the full corpus, not a single page
+  → deterministic Composio catalog compare
+  → write findings + verification
+```
+
+Pass 2 only overwrites a field when the corpus **contradicts** pass 1. Incomplete evidence (e.g. an OAuth page that does not list REST objects) is not treated as “unknown API.” Auth-product migrations such as Salesforce Connected Apps → External Client Apps are stored as a setup note, not a demotion from `ready` to `caveats`.
+
+LLM calls use a raised token budget, `finish_reason` checks, JSON salvage, and retries on truncation / rate limits.
+
+## Verification (built into Part 1)
+
+Accuracy loop that already exists:
+
+1. **First pass** — Exa snippets → structured fields + citations.
+2. **Second pass** — re-fetch docs, per-field confirmed/revised notes, confidence.
+3. **Catalog check** — no LLM. Flags e.g. Composio ships an MCP toolkit while the agent said `hasOfficialMcp=false`, or catalog lists OAuth2 while the agent omitted it.
+
+Human review is still required on a sample (Part 2): open the live docs URL, score hits/misses, and report how accuracy moved between passes.
+
+## Known limitations
+
+- Exa `/contents` sometimes returns client telemetry JS instead of rendered docs. Those fetches are discarded and the search corpus is used instead.
+- Workflow IDs expire in Convex; missing runs show as `expired` rather than crashing the panel.
+- Patterns across all 100, bulk run, and the standalone HTML case study are **not** done yet (Part 2).
+
+## Part 2 (not started)
+
+The assignment still needs:
+
+- Research the remaining apps (or bulk-run) so the table is full.
+- Cluster patterns (auth mix, gated vs self-serve by category, common blockers, easy wins vs outreach).
+- Sample audit with honest hits/misses and first-pass vs verified numbers.
+- One self-explanatory HTML case study: patterns on top, table, agent explanation, live proof, verification.
+
+---
+
+## Original brief (research set)
+
+Composio turns apps into tools agents can call. This set is 100 apps across 10 categories so the interesting work is the patterns, not any single row.
 
 ### 1. CRM and Sales
 
@@ -180,65 +275,25 @@ A real mix: apps customers have actually requested, and well-known apps. Across 
 | 99 | YouTube Transcript | transcriptapi.com |
 | 100 | Grain | grain.com (meeting notes) |
 
-## The deliverable
+## Ground truth: Composio catalog snapshot
 
-A **single self-explanatory HTML page / case study** a reviewer understands in about two minutes with no narration. It must make clear on its own:
-
-- the **findings** (clean skimmable table / matrix)
-- the **patterns** (on top, plainly stated — the headline)
-- the **agent** (what was built, where a human was needed)
-- the **proof** (the app, live link or runnable trigger)
-- the **verification** (accuracy check on a sample, hits and misses shown honestly)
-
-Clarity and presentation are the point. Show both the final output and the process / workflow behind it, and make it easy for both an agent and a human to consume.
-
-## Constraints and honesty
-
-- Use AI tooling freely (that is the job), but understand and be able to explain everything submitted; the interview will probe it.
-- If the agent got things wrong or an app defeated you, say so on the page.
-- Paid accounts for apps are not required. Where an app is gated behind payment or partnership, saying so with evidence is the correct finding, not a failure.
-
-## What to submit
-
-- A live link to the deployed HTML page / case study.
-- A link to this source repo with a short README on how to run the research agent (this file).
-
-## Stack
-
-- [Convex](https://convex.dev/) — backend (database, server logic)
-- [Next.js](https://nextjs.org/) + [React](https://react.dev/) — app / case study
-- [Tailwind](https://tailwindcss.com/) — UI
-
-## How to run
-
-```bash
-bun install
-bun run dev
-```
-
-(`npx convex dev` for the Convex backend during development; do not use `npx convex deploy` except for production.)
-
-How to run the **research agent** across the 100 apps will be documented here once the pipeline exists.
-
-## Ground truth: existing Composio toolkits
-
-`data/` is a snapshot of [Composio toolkit docs](https://docs.composio.dev/toolkits) for apps in the research set. We will use it later to **cross-check the research agent** (did it say an app is already a toolkit when Composio already ships one, and do auth / tool counts line up with the official page).
+`data/` is a snapshot of [Composio toolkit docs](https://docs.composio.dev/toolkits) for apps in this set. The agent compares its findings to it (already a toolkit? auth / MCP kind line up?).
 
 ### How the files were collected
 
-1. Download the catalog markdown: `https://docs.composio.dev/toolkits.md` (Mintlify `.md` mirror of the toolkits index; ~1552 toolkits at snapshot time).
-2. Parse each row’s display name, URL slug, and `SLUG` (e.g. Telegram → `telegram` / `TELEGRAM`).
-3. Match the 100 research apps by name / slug (spaces → `_` or concatenation; aliases such as GoHighLevel → `highlevel`, WhatsApp Business → `whatsapp`).
-4. If a match exists, save the official page: `https://docs.composio.dev/toolkits/{slug}.md` → `data/{slug}.md`.
-5. If there is no catalog row, there is no file. **Absence is also a check:** the agent should not invent a Composio toolkit for those apps.
+1. Download `https://docs.composio.dev/toolkits.md`.
+2. Parse display name, URL slug, and `SLUG`.
+3. Match the 100 apps by name / slug (aliases: GoHighLevel → `highlevel`, WhatsApp Business → `whatsapp`).
+4. If matched: `https://docs.composio.dev/toolkits/{slug}.md` → `data/{slug}.md`.
+5. No catalog row → no file. Absence is a check: do not invent a toolkit.
 
-### Coverage (100 apps)
+### Coverage
 
-- **67 in catalog** — markdown saved under `data/`.
-- **33 not in catalog** — Podio, Copper, DealCloud, Front, LiveAgent, Gladly, Twilio, Zoho Cliq, Lark, Aircall, Vonage, systeme.io, Threads, WooCommerce, BigCommerce, Salesforce Commerce Cloud, Magento, Squarespace, Ecwid, Amazon Selling Partner, fanbasis, SE Ranking, Sherlock, Waterfall.io, MongoDB Atlas, Smartsheet, Binance, Paygent Connect, iPayX, PitchBook, Reducto, Mermaid CLI, Grain.
+- **67 in catalog** under `data/`.
+- **33 not in catalog:** Podio, Copper, DealCloud, Front, LiveAgent, Gladly, Twilio, Zoho Cliq, Lark, Aircall, Vonage, systeme.io, Threads, WooCommerce, BigCommerce, Salesforce Commerce Cloud, Magento, Squarespace, Ecwid, Amazon Selling Partner, fanbasis, SE Ranking, Sherlock, Waterfall.io, MongoDB Atlas, Smartsheet, Binance, Paygent Connect, iPayX, PitchBook, Reducto, Mermaid CLI, Grain.
 
-Matching notes (so validation does not treat these as misses):
+Matching notes:
 
-- Some apps only appear as an **MCP toolkit** (`pylon_mcp`, `netlify_mcp`, `plaid_mcp`, `otter_ai_mcp`, `devin_mcp`, `higgsfield_mcp`), not a same-named REST toolkit.
-- **Zoho CRM** maps to the generic `zoho` toolkit, not a `zoho_crm` page.
-- **Mermaid CLI** was not saved: the catalog has [Mermaid Chart MCP](https://docs.composio.dev/toolkits/mermaid_chart_mcp.md), a different product.
+- Some apps are **MCP toolkits** only (`pylon_mcp`, `netlify_mcp`, `plaid_mcp`, `otter_ai_mcp`, `devin_mcp`, `higgsfield_mcp`).
+- **Zoho CRM** maps to generic `zoho`, not `zoho_crm`.
+- **Mermaid CLI** was not saved; the catalog has [Mermaid Chart MCP](https://docs.composio.dev/toolkits/mermaid_chart_mcp.md), a different product.
