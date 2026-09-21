@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { createColumns } from "@/components/table/columns"
 import { DataTable } from "@/components/table/data-table"
-import { AppDetailSheet } from "@/components/table/app-detail-sheet"
+import { AppDetailSheet } from "@/components/table/app-details"
 import { type AppResearch } from "@/components/table/data"
 
 export function AppsTableContainer({ initialData }: { initialData: AppResearch[] }) {

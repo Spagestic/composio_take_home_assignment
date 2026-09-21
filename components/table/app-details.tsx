@@ -3,7 +3,12 @@
 import * as React from "react"
 import { useMutation } from "convex/react"
 
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+} from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { type AppResearch } from "./data"
 import { api } from "@/convex/_generated/api"
@@ -55,16 +60,22 @@ export function AppDetailSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
-        <SheetHeaderSection
-          app={app}
-          status={status}
-          isRunning={isRunning}
-          onRun={handleRun}
-        />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="flex max-h-[80dvh] min-h-0 w-[calc(100%-2rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-h-[85dvh] sm:max-w-2xl lg:max-w-4xl"
+        showCloseButton={false}
+      >
+        <DialogTitle className="sr-only">{app.name} details</DialogTitle>
+        <DialogHeader>
+          <SheetHeaderSection
+            app={app}
+            status={status}
+            isRunning={isRunning}
+            onRun={handleRun}
+          />
+        </DialogHeader>
 
-        <div className="flex flex-col gap-5 p-6">
+        <div className="subtle-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6">
           {/* Ground Truth / Composio Baseline Section */}
           <ComposioCatalogBaseline app={app} />
 
@@ -83,7 +94,7 @@ export function AppDetailSheet({
             appError={app.researchError}
           />
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
