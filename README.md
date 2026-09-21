@@ -4,6 +4,8 @@ Research agent that evaluates ~100 apps as potential Composio toolkits (auth, se
 
 **Status: Complete.** Part 1 delivers the research agent, Convex store, catalog baseline, and per-app table/detail UI. Part 2 delivers the reviewer-facing case study: patterns across all 100 apps, a measured human sample audit, and a live HTML page.
 
+[Live demo](https://composio-take-home-assignment-iota.vercel.app/)
+
 ![Demo image](image.png)
 
 ## What Part 1 covers
