@@ -1,8 +1,10 @@
-﻿# Composio AI Product Ops Intern â€” take-home
+﻿# Composio AI Product Ops Intern: take-home assignment
 
 Research agent that evaluates ~100 apps as potential Composio toolkits (auth, self-serve vs gated, API surface, MCP, buildability), then a case study of patterns and verification.
 
-**Status: Part 1 is complete.** The agent pipeline, Convex store, catalog baseline, and per-app table/detail UI exist and can be re-run. Part 2 is the reviewer-facing case study: patterns across all 100, a measured sample audit, and a live HTML page.
+**Status: Complete.** Part 1 delivers the research agent, Convex store, catalog baseline, and per-app table/detail UI. Part 2 delivers the reviewer-facing case study: patterns across all 100 apps, a measured human sample audit, and a live HTML page.
+
+![Demo image](image.png)
 
 ## What Part 1 covers
 
@@ -102,26 +104,23 @@ Accuracy loop that already exists:
 2. **Second pass** â€” re-fetch docs, per-field confirmed/revised notes, confidence.
 3. **Catalog check** â€” no LLM. Flags e.g. Composio ships an MCP toolkit while the agent said `hasOfficialMcp=false`, or catalog lists OAuth2 while the agent omitted it.
 
-Human review is still required on a sample (Part 2): open the live docs URL, score hits/misses, and report how accuracy moved between passes.
+Human review is included as a sample audit: open the live docs URL, score hits/misses, and report how accuracy moved between passes.
 
 ## Known limitations
 
 - Exa `/contents` sometimes returns client telemetry JS instead of rendered docs. Those fetches are discarded and the search corpus is used instead.
 - Workflow IDs expire in Convex; missing runs show as `expired` rather than crashing the panel.
-- Recording the human sample audit is still outstanding (Part 2).
+- The live research results depend on the configured Convex deployment and external documentation providers.
 
-## Part 2 (in progress)
+## Part 2: Case study and audit
 
-Done so far:
+The reviewer-facing case study is complete and includes:
 
 - All 100 apps researched via the table's **Run remaining** bulk action.
 - `analysis:patterns` query aggregates auth mix, access by category, buildability, blockers, catalog agreement, easy wins vs outreach, and pass-2 verification stats.
 - Optional `audit` field on apps plus `audit:recordAudit` / `audit:clearAudit` mutations and an `audit:suggestSample` query for the human sample audit.
 - Root page case study: TL;DR stats, pattern charts, agent pipeline explanation, and verification/audit section above the live table.
-
-Still outstanding:
-
-- Record the human audits for the suggested sample (`npx convex run audit:suggestSample`, then `audit:recordAudit` per app).
+- Human audits recorded for the suggested sample and surfaced in the verification section.
 
 ---
 
