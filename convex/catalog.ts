@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server"
+import { internalQuery, mutation, query } from "./_generated/server"
 import { v } from "convex/values"
 import catalogData from "./catalogManifest.json"
 import { catalogBaselineValidator } from "./schema"
@@ -69,6 +69,38 @@ export const seedCatalogBaseline = mutation({
 })
 
 export const getByRank = query({
+  args: { rank: v.number() },
+  returns: v.union(catalogBaselineValidator, v.null()),
+  handler: async (ctx, args) => {
+    const item = await ctx.db
+      .query("composioCatalog")
+      .withIndex("by_rank", (q) => q.eq("rank", args.rank))
+      .unique()
+
+    if (!item) return null
+
+    return {
+      rank: item.rank,
+      appName: item.appName,
+      inCatalog: item.inCatalog,
+      absenceReason: item.absenceReason,
+      composioSlug: item.composioSlug,
+      composioToolkitKind: item.composioToolkitKind,
+      canonicalDocsUrl: item.canonicalDocsUrl,
+      snapshotPath: item.snapshotPath,
+      snapshotVersion: item.snapshotVersion,
+      composioCategory: item.composioCategory,
+      composioAuth: item.composioAuth,
+      composioOauthAvailable: item.composioOauthAvailable,
+      toolCount: item.toolCount,
+      triggerCount: item.triggerCount,
+      headlineSummary: item.headlineSummary,
+      updatedAt: item.updatedAt,
+    }
+  },
+})
+
+export const getByRankInternal = internalQuery({
   args: { rank: v.number() },
   returns: v.union(catalogBaselineValidator, v.null()),
   handler: async (ctx, args) => {

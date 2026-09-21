@@ -52,7 +52,7 @@ export const researchApp = workflow
         { retry: { maxAttempts: 3, initialBackoffMs: 1000, base: 2 } }
       );
 
-      // 3. Extract structured research findings with Kimi K3 via Modal
+      // 3. Extract structured research findings
       const findings = await step.runAction(
         internal.extract.extractResearchFindings,
         {
@@ -64,19 +64,107 @@ export const researchApp = workflow
         { retry: { maxAttempts: 4, initialBackoffMs: 20000, base: 2 } }
       );
 
-      // 4. Update the app document in the database
+      const targetDocsUrl = findings.docsUrl ?? searchResult.suggestedDocsUrl;
+
+      // 4. Fetch primary docs content for verification
+      const fetchedDocs = targetDocsUrl
+        ? await step.runAction(
+            internal.researchSteps.fetchDocsContent,
+            { url: targetDocsUrl },
+            { retry: { maxAttempts: 2, initialBackoffMs: 2000, base: 2 } }
+          )
+        : { url: "", text: "", success: false };
+
+      // 5. LLM verification pass
+      const verifyResult = await step.runAction(
+        internal.extract.verifyResearchFindings,
+        {
+          name: app.name,
+          website: app.website,
+          category: app.category,
+          docsUrl: targetDocsUrl,
+          primaryDocsContent: fetchedDocs.success && fetchedDocs.text
+            ? fetchedDocs.text
+            : searchResult.contextText.slice(0, 12000),
+          firstPassFindings: {
+            oneLiner: findings.oneLiner,
+            authMethods: findings.authMethods,
+            access: findings.access,
+            apiStyles: findings.apiStyles,
+            apiBreadth: findings.apiBreadth,
+            hasOfficialMcp: findings.hasOfficialMcp,
+            buildability: findings.buildability,
+            blocker: findings.blocker,
+          },
+        },
+        { retry: { maxAttempts: 3, initialBackoffMs: 5000, base: 2 } }
+      );
+
+      // 6. Deterministic catalog cross-check
+      const catalogBaseline = await step.runQuery(
+        internal.catalog.getByRankInternal,
+        { rank: args.rank }
+      );
+
+      let catalogComparison: "match" | "mismatch" | "not_researched" | "not_applicable" = "not_applicable";
+      const catalogNotesList: string[] = [];
+
+      if (catalogBaseline && catalogBaseline.inCatalog) {
+        let mismatches = 0;
+        // Check MCP kind
+        if (catalogBaseline.composioToolkitKind === "mcp" && !findings.hasOfficialMcp) {
+          mismatches++;
+          catalogNotesList.push(`Composio lists this as an MCP toolkit (${catalogBaseline.composioSlug}), but agent detected hasOfficialMcp=false.`);
+        }
+
+        // Check OAuth presence
+        const baselineAuth = (catalogBaseline.composioAuth ?? "").toUpperCase();
+        const effectiveAuth = (verifyResult.revisedAuthMethods ?? findings.authMethods);
+        if (baselineAuth.includes("OAUTH") && !effectiveAuth.includes("oauth2")) {
+          mismatches++;
+          catalogNotesList.push(`Catalog baseline lists ${catalogBaseline.composioAuth}, but agent did not include oauth2.`);
+        }
+
+        catalogComparison = mismatches > 0 ? "mismatch" : "match";
+      } else if (catalogBaseline && !catalogBaseline.inCatalog) {
+        catalogComparison = "match";
+        catalogNotesList.push("Verified absent from Composio catalog (one of 33 set).");
+      }
+
+      // Reconcile findings with revisions from verification
+      const effectiveAuthMethods = verifyResult.revisedAuthMethods ?? findings.authMethods;
+      const effectiveAccess = verifyResult.revisedAccess ?? findings.access;
+      const effectiveBuildability = verifyResult.revisedBuildability ?? findings.buildability;
+
+      const correctionsCount =
+        (verifyResult.revisedAuthMethods ? 1 : 0) +
+        (verifyResult.revisedAccess ? 1 : 0) +
+        (verifyResult.revisedBuildability ? 1 : 0);
+
+      // 7. Update the app document in the database
       await step.runMutation(internal.apps.updateResearchInternal, {
         rank: args.rank,
         oneLiner: findings.oneLiner,
-        authMethods: findings.authMethods,
-        access: findings.access,
+        authMethods: effectiveAuthMethods,
+        access: effectiveAccess,
         apiStyles: findings.apiStyles,
         apiBreadth: findings.apiBreadth,
         hasOfficialMcp: findings.hasOfficialMcp,
-        buildability: findings.buildability,
+        buildability: effectiveBuildability,
         blocker: findings.blocker,
-        docsUrl: findings.docsUrl ?? searchResult.suggestedDocsUrl,
+        docsUrl: targetDocsUrl,
         evidenceNotes: findings.evidenceNotes,
+        sources: searchResult.sources,
+        citations: findings.citations ?? null,
+        verification: {
+          verifiedAt: Date.now(),
+          confidence: verifyResult.confidence,
+          summary: verifyResult.summary,
+          fieldChecks: verifyResult.fieldChecks,
+          catalogComparison,
+          catalogNotes: catalogNotesList.length > 0 ? catalogNotesList.join(" ") : null,
+          correctionsApplied: correctionsCount,
+        },
       });
 
       // 5. Mark as completed
@@ -91,7 +179,7 @@ export const researchApp = workflow
         ok: true,
         rank: args.rank,
         name: app.name,
-        buildability: findings.buildability,
+        buildability: effectiveBuildability,
       };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
