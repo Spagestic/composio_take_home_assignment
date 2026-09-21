@@ -119,6 +119,31 @@ function LoadingGrid() {
   )
 }
 
+function LoadingChartCard({ height = "h-72" }: { height?: string }) {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-5 w-2/5" />
+        <Skeleton className="h-4 w-4/5" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className={`w-full ${height}`} />
+      </CardContent>
+    </Card>
+  )
+}
+
+function LoadingCharts() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <LoadingChartCard />
+      <LoadingChartCard />
+      <LoadingChartCard height="h-64" />
+      <LoadingChartCard height="h-56" />
+    </div>
+  )
+}
+
 export function CaseStudy() {
   const patterns = useQuery(api.analysis.patterns, {})
   const sample = useQuery(api.audit.suggestSample, {})
@@ -163,6 +188,13 @@ export function CaseStudy() {
       <div className="flex flex-col gap-10">
         <Header />
         <LoadingGrid />
+        <section className="flex flex-col gap-4">
+          <div>
+            <Skeleton className="h-8 w-72" />
+            <Skeleton className="mt-2 h-4 w-full max-w-2xl" />
+          </div>
+          <LoadingCharts />
+        </section>
       </div>
     )
   }
