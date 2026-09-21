@@ -262,7 +262,7 @@ export function WorkflowRunList({
         </div>
       ) : (
         <div className="rounded-lg border border-dashed p-3 text-center text-xs text-muted-foreground">
-          No execution runs recorded yet. Click Run Research to execute Exa + Gemini agent steps.
+          No execution runs recorded yet. Click Run Agent to execute agent steps.
         </div>
       )}
     </div>

@@ -353,7 +353,7 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
                       ? "Agent currently researching..."
                       : status === "failed"
                         ? "Retry research workflow"
-                        : "Run Exa + Gemini research"}
+                        : "Run Agent"}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
