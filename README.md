@@ -76,7 +76,7 @@ npx convex run catalog:seedCatalogBaseline '{"force":true}'
 
 Each run is a durable Convex workflow (`convex/research.ts`). Re-runs keep the last few workflow IDs for history.
 
-There is not yet a “research all 100” bulk trigger; Part 1 is per-app so you can inspect traces. Batching is Part 2.
+To research all untouched records, use **Run remaining** beside the table filter and confirm the count. The action queues only apps with `not_started` status; completed, failed, queued, and running records are left unchanged. Progress is shown in the toolbar, and failed records can be retried individually from their row.
 
 ## Agent pipeline
 
@@ -108,13 +108,13 @@ Human review is still required on a sample (Part 2): open the live docs URL, sco
 
 - Exa `/contents` sometimes returns client telemetry JS instead of rendered docs. Those fetches are discarded and the search corpus is used instead.
 - Workflow IDs expire in Convex; missing runs show as `expired` rather than crashing the panel.
-- Patterns across all 100, bulk run, and the standalone HTML case study are **not** done yet (Part 2).
+- Pattern analysis, the sample audit, and the standalone HTML case study are still outstanding (Part 2).
 
-## Part 2 (not started)
+## Part 2 (in progress)
 
 The assignment still needs:
 
-- Research the remaining apps (or bulk-run) so the table is full.
+- Run the remaining apps from the table's **Run remaining** action so the table is full.
 - Cluster patterns (auth mix, gated vs self-serve by category, common blockers, easy wins vs outreach).
 - Sample audit with honest hits/misses and first-pass vs verified numbers.
 - One self-explanatory HTML case study: patterns on top, table, agent explanation, live proof, verification.
