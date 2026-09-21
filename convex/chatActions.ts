@@ -18,9 +18,9 @@ export const stream = internalAction({
     let lastWrittenText = ""
 
     try {
-      const result = streamMarkdown({ prompt: args.prompt })
+      const textStream = await streamMarkdown({ prompt: args.prompt })
 
-      for await (const delta of result.textStream) {
+      for await (const delta of textStream) {
         text += delta
         const now = Date.now()
         if (now - lastWriteAt >= 100) {

@@ -11,7 +11,7 @@ import {
   RotateCwIcon,
   TelescopeIcon,
 } from "lucide-react"
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react"
 
 import { api } from "@/convex/_generated/api"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
@@ -100,6 +100,15 @@ export default function LlmPage() {
       toast.add({ title: message })
       setPrompt(nextPrompt)
     }
+  }
+
+  function handlePromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
+      return
+    }
+
+    event.preventDefault()
+    event.currentTarget.form?.requestSubmit()
   }
 
   function resetConversation() {
@@ -218,6 +227,7 @@ export default function LlmPage() {
                   <InputGroupTextarea
                     value={prompt}
                     onChange={(event) => setPrompt(event.target.value)}
+                    onKeyDown={handlePromptKeyDown}
                     placeholder="Ask anything…"
                     disabled={isSubmitting || !sessionId}
                     rows={2}
@@ -282,7 +292,7 @@ export default function LlmPage() {
             </CardFooter>
           </Card>
           <div className="px-0.5 text-center text-xs text-muted-foreground">
-            Messages stream from Gemini in real time.
+            Messages stream from Kimi K3 via Modal in real time.
           </div>
         </div>
       </MessageScrollerProvider>

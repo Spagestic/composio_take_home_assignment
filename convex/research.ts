@@ -52,7 +52,7 @@ export const researchApp = workflow
         { retry: { maxAttempts: 3, initialBackoffMs: 1000, base: 2 } }
       );
 
-      // 3. Extract structured research findings with Gemini
+      // 3. Extract structured research findings with Kimi K3 via Modal
       const findings = await step.runAction(
         internal.extract.extractResearchFindings,
         {
