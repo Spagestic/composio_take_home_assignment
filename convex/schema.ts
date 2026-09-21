@@ -65,6 +65,43 @@ export const catalogComparisonStatusValidator = v.union(
   v.literal("not_applicable")
 )
 
+export const verificationConfidenceValidator = v.union(
+  v.literal("high"),
+  v.literal("medium"),
+  v.literal("low")
+)
+
+export const sourceItemValidator = v.object({
+  title: v.string(),
+  url: v.string(),
+})
+
+export const citationsValidator = v.object({
+  auth: v.optional(v.union(v.string(), v.null())),
+  access: v.optional(v.union(v.string(), v.null())),
+  apiSurface: v.optional(v.union(v.string(), v.null())),
+  mcp: v.optional(v.union(v.string(), v.null())),
+  buildability: v.optional(v.union(v.string(), v.null())),
+})
+
+export const fieldCheckValidator = v.object({
+  field: v.string(),
+  original: v.string(),
+  verified: v.boolean(),
+  corrected: v.optional(v.union(v.string(), v.null())),
+  note: v.string(),
+})
+
+export const verificationResultValidator = v.object({
+  verifiedAt: v.number(),
+  confidence: verificationConfidenceValidator,
+  summary: v.string(),
+  fieldChecks: v.array(fieldCheckValidator),
+  catalogComparison: catalogComparisonStatusValidator,
+  catalogNotes: v.optional(v.union(v.string(), v.null())),
+  correctionsApplied: v.number(),
+})
+
 export const catalogBaselineValidator = v.object({
   rank: v.number(),
   appName: v.string(),
@@ -109,6 +146,9 @@ export const appDocValidator = v.object({
   blocker: v.union(v.string(), v.null()),
   docsUrl: v.union(v.string(), v.null()),
   evidenceNotes: v.union(v.string(), v.null()),
+  sources: v.optional(v.union(v.array(sourceItemValidator), v.null())),
+  citations: v.optional(v.union(citationsValidator, v.null())),
+  verification: v.optional(v.union(verificationResultValidator, v.null())),
   composioInCatalog: v.boolean(),
   composioSlug: v.union(v.string(), v.null()),
   composioToolkitKind: v.union(composioToolkitKindValidator, v.null()),
@@ -138,6 +178,9 @@ export default defineSchema({
     blocker: v.union(v.string(), v.null()),
     docsUrl: v.union(v.string(), v.null()),
     evidenceNotes: v.union(v.string(), v.null()),
+    sources: v.optional(v.union(v.array(sourceItemValidator), v.null())),
+    citations: v.optional(v.union(citationsValidator, v.null())),
+    verification: v.optional(v.union(verificationResultValidator, v.null())),
 
     // Ground truth from README & Composio catalog
     composioInCatalog: v.boolean(),

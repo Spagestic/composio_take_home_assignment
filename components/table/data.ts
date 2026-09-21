@@ -124,6 +124,29 @@ export type AppResearch = {
   blocker: string | null
   docsUrl: string | null
   evidenceNotes: string | null
+  sources?: { title: string; url: string }[] | null
+  citations?: {
+    auth?: string | null
+    access?: string | null
+    apiSurface?: string | null
+    mcp?: string | null
+    buildability?: string | null
+  } | null
+  verification?: {
+    verifiedAt: number
+    confidence: "high" | "medium" | "low"
+    summary: string
+    fieldChecks: {
+      field: string
+      original: string
+      verified: boolean
+      corrected?: string | null
+      note: string
+    }[]
+    catalogComparison: "match" | "mismatch" | "not_researched" | "not_applicable"
+    catalogNotes?: string | null
+    correctionsApplied: number
+  } | null
 
   /** Ground truth from README + data/*.md */
   composioInCatalog: boolean
