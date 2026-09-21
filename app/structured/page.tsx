@@ -3,8 +3,8 @@
 import { useAction } from "convex/react"
 import {
   AlertCircleIcon,
-  ArrowRightIcon,
   CheckCircle2Icon,
+  CircleDotIcon,
   Code2Icon,
   CopyIcon,
   SparklesIcon,
@@ -28,61 +28,43 @@ import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/toast"
 
-interface StructuredResult {
+interface StructuredTask {
   title: string
   summary: string
-  category: "engineering" | "product" | "security" | "operations" | "general"
-  priority: "low" | "medium" | "high" | "critical"
-  sentiment: "positive" | "neutral" | "negative" | "mixed"
+  priority: "low" | "medium" | "high"
   tags: string[]
-  actionItems: Array<{
-    task: string
-    ownerRole: string
-  }>
+  isCompleted: boolean
 }
 
 const SAMPLE_PROMPTS = [
   {
-    label: "Incident Report",
-    text: "Database connection pool saturated during peak traffic, resulting in 504 errors on the checkout service for 8 minutes. We temporarily increased pool sizing and restarted pods, but need connection pooling proxy middleware, aggressive query timeouts, and updated dashboard alerts.",
+    label: "UI Alignment",
+    text: "Fix login button alignment on mobile screens so it sits centered below the input fields.",
   },
   {
-    label: "Product Feature Spec",
-    text: "We want to roll out an MCP connector for Composio so internal AI agents can query our knowledge base. We require OAuth2 authentication, rate limiting per tenant, audit logging for all tool invocations, and full end-to-end telemetry before beta launch.",
+    label: "SSL Expiry",
+    text: "Renew database SSL certificate before Friday expiry to prevent connection downtime.",
   },
   {
-    label: "Security Finding",
-    text: "Automated scan discovered an outdated third-party dependency with a high CVE in our ingestion worker. Exploitation requires authenticated access, but we should patch the library immediately and schedule a regression check in staging.",
+    label: "Rate Limiting",
+    text: "Add rate limiting headers to public API endpoints to protect against bursts of traffic.",
   },
 ]
 
 const SCHEMA_DOCUMENTATION = `{
   title: string,
   summary: string,
-  category: "engineering" | "product" | "security" | "operations" | "general",
-  priority: "low" | "medium" | "high" | "critical",
-  sentiment: "positive" | "neutral" | "negative" | "mixed",
+  priority: "low" | "medium" | "high",
   tags: string[],
-  actionItems: [{ task: string, ownerRole: string }]
+  isCompleted: boolean
 }`
 
-function getPriorityVariant(priority: StructuredResult["priority"]) {
+function getPriorityVariant(priority: StructuredTask["priority"]) {
   switch (priority) {
-    case "critical":
-      return "destructive"
     case "high":
-      return "secondary"
-    default:
-      return "outline"
-  }
-}
-
-function getSentimentVariant(sentiment: StructuredResult["sentiment"]) {
-  switch (sentiment) {
-    case "positive":
-      return "secondary"
-    case "negative":
       return "destructive"
+    case "medium":
+      return "secondary"
     default:
       return "outline"
   }
@@ -91,11 +73,11 @@ function getSentimentVariant(sentiment: StructuredResult["sentiment"]) {
 export default function StructuredPlaygroundPage() {
   const [prompt, setPrompt] = useState(SAMPLE_PROMPTS[0]?.text ?? "")
   const [isLoading, setIsLoading] = useState(false)
-  const [result, setResult] = useState<StructuredResult | null>(null)
+  const [result, setResult] = useState<StructuredTask | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showRawJson, setShowRawJson] = useState(false)
 
-  const analyze = useAction(api.structuredActions.analyzeText)
+  const analyze = useAction(api.structuredActions.analyzeTask)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -128,7 +110,7 @@ export default function StructuredPlaygroundPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-6 px-4 py-8">
+    <div className="mx-auto flex min-h-svh w-full max-w-5xl flex-col gap-6 px-4 py-8">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <Badge variant="outline">Playground</Badge>
@@ -138,7 +120,7 @@ export default function StructuredPlaygroundPage() {
           Structured Output Playground
         </h1>
         <p className="text-sm text-muted-foreground">
-          Test typed JSON generation against a strict Zod schema using the AI SDK and Gemini.
+          Test typed JSON generation against a simple Zod task schema using the AI SDK and Gemini.
         </p>
       </div>
 
@@ -149,7 +131,7 @@ export default function StructuredPlaygroundPage() {
             <CardHeader>
               <CardTitle>Input Prompt</CardTitle>
               <CardDescription>
-                Provide unstructured context or pick one of the sample scenarios below.
+                Describe any task or select a simple example below.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
@@ -178,13 +160,13 @@ export default function StructuredPlaygroundPage() {
                       id="prompt-input"
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="Type or paste text to analyze into structured format..."
-                      rows={7}
+                      placeholder="e.g. Update user avatar upload size limit to 5MB..."
+                      rows={5}
                       disabled={isLoading}
                       className="resize-y"
                     />
                     <FieldDescription>
-                      The model extracts fields that strictly conform to the expected schema.
+                      The model extracts fields strictly matching the target task schema.
                     </FieldDescription>
                   </Field>
                 </FieldGroup>
@@ -192,7 +174,7 @@ export default function StructuredPlaygroundPage() {
             </CardContent>
             <CardFooter className="justify-between border-t pt-4">
               <span className="text-xs text-muted-foreground">
-                {prompt.length} / 8000 characters
+                {prompt.length} / 4000 characters
               </span>
               <Button
                 type="submit"
@@ -207,7 +189,7 @@ export default function StructuredPlaygroundPage() {
                 ) : (
                   <>
                     <SparklesIcon data-icon="inline-start" />
-                    Generate Output
+                    Extract Task
                   </>
                 )}
               </Button>
@@ -216,9 +198,9 @@ export default function StructuredPlaygroundPage() {
 
           <Card size="sm">
             <CardHeader>
-              <CardTitle className="text-xs font-medium">Target Zod Schema</CardTitle>
+              <CardTitle className="text-xs font-medium">Simple Zod Schema</CardTitle>
               <CardDescription>
-                Enforced by `generateStructured` via `Output.object`
+                `structuredTaskSchema` validated by `generateStructured`
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -231,19 +213,19 @@ export default function StructuredPlaygroundPage() {
 
         {/* Right column: Validated Result */}
         <div className="flex flex-col gap-6">
-          <Card className="min-h-120">
+          <Card className="min-h-100">
             <CardHeader className="border-b">
               <CardTitle className="flex items-center gap-2">
-                <span>Validated Result</span>
+                <span>Extracted Task</span>
                 {result && (
                   <Badge variant="secondary" className="gap-1">
                     <CheckCircle2Icon className="size-3" />
-                    Schema Valid
+                    Valid
                   </Badge>
                 )}
               </CardTitle>
               <CardDescription>
-                Live response parsed and typed by the backend action.
+                Typed and validated against the schema.
               </CardDescription>
               {result && (
                 <CardAction className="flex items-center gap-1.5">
@@ -271,7 +253,7 @@ export default function StructuredPlaygroundPage() {
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center text-muted-foreground">
                   <Spinner />
                   <p className="text-xs">
-                    Calling Gemini 3.6 Flash & validating output schema…
+                    Calling Gemini 3.6 Flash & validating schema…
                   </p>
                 </div>
               )}
@@ -280,7 +262,7 @@ export default function StructuredPlaygroundPage() {
                 <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
                   <AlertCircleIcon className="size-4 shrink-0" />
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-medium">Generation Error</span>
+                    <span className="font-medium">Extraction Error</span>
                     <span>{error}</span>
                   </div>
                 </div>
@@ -290,7 +272,7 @@ export default function StructuredPlaygroundPage() {
                 <div className="flex flex-1 flex-col items-center justify-center gap-2 py-20 text-center text-muted-foreground">
                   <Code2Icon className="size-8 opacity-40" />
                   <p className="text-xs">
-                    No output yet. Enter a prompt and submit to see typed results.
+                    No output yet. Enter a task description and click extract.
                   </p>
                 </div>
               )}
@@ -298,35 +280,40 @@ export default function StructuredPlaygroundPage() {
               {result && !isLoading && (
                 <>
                   {showRawJson ? (
-                    <pre className="max-h-120 overflow-auto rounded-md bg-muted/60 p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                    <pre className="max-h-100 overflow-auto rounded-md bg-muted/60 p-3 font-mono text-[11px] leading-relaxed text-foreground">
                       {JSON.stringify(result, null, 2)}
                     </pre>
                   ) : (
                     <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                          Title
-                        </span>
-                        <h2 className="text-base font-semibold tracking-tight text-foreground">
-                          {result.title}
-                        </h2>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                            Title
+                          </span>
+                          <h2 className="text-base font-semibold tracking-tight text-foreground">
+                            {result.title}
+                          </h2>
+                        </div>
+                        <Badge variant={result.isCompleted ? "secondary" : "outline"} className="gap-1">
+                          {result.isCompleted ? (
+                            <CheckCircle2Icon className="size-3" />
+                          ) : (
+                            <CircleDotIcon className="size-3" />
+                          )}
+                          {result.isCompleted ? "Completed" : "Pending"}
+                        </Badge>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">
-                          Category: {result.category}
-                        </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Priority:</span>
                         <Badge variant={getPriorityVariant(result.priority)}>
-                          Priority: {result.priority}
-                        </Badge>
-                        <Badge variant={getSentimentVariant(result.sentiment)}>
-                          Sentiment: {result.sentiment}
+                          {result.priority}
                         </Badge>
                       </div>
 
                       <div className="flex flex-col gap-1.5">
                         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                          Executive Summary
+                          Summary
                         </span>
                         <p className="rounded-md bg-muted/40 p-3 text-xs/relaxed text-muted-foreground">
                           {result.summary}
@@ -342,30 +329,6 @@ export default function StructuredPlaygroundPage() {
                             <Badge key={tag} variant="secondary">
                               #{tag}
                             </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                          Action Items ({result.actionItems.length})
-                        </span>
-                        <div className="flex flex-col gap-2">
-                          {result.actionItems.map((item, index) => (
-                            <div
-                              key={index}
-                              className="flex items-start gap-2.5 rounded-md border p-2.5 text-xs"
-                            >
-                              <ArrowRightIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                              <div className="flex flex-1 flex-col gap-1">
-                                <span className="font-medium text-foreground">
-                                  {item.task}
-                                </span>
-                                <span className="text-[11px] text-muted-foreground">
-                                  Suggested owner: <span className="text-foreground">{item.ownerRole}</span>
-                                </span>
-                              </div>
-                            </div>
                           ))}
                         </div>
                       </div>
