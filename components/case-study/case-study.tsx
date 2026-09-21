@@ -19,6 +19,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -174,38 +175,51 @@ export function CaseStudy() {
   const apiBreadth = Object.entries(patterns.apiBreadth).map(
     ([breadth, count]) => ({ breadth, count })
   )
+  const catalogOpportunity = React.useMemo(() => {
+    const buckets = {
+      in: { group: "In catalog", ready: 0, caveats: 0, blocked: 0, unknown: 0 },
+      out: {
+        group: "Not in catalog",
+        ready: 0,
+        caveats: 0,
+        blocked: 0,
+        unknown: 0,
+      },
+    }
+    for (const app of apps ?? []) {
+      const bucket = app.composioInCatalog ? buckets.in : buckets.out
+      const key = app.buildability ?? "unknown"
+      bucket[key] += 1
+    }
+    return [buckets.in, buckets.out]
+  }, [apps])
 
   return (
     <div className="flex flex-col gap-10">
       <Header />
 
-      <Section
-        title="TL;DR"
-        description="One research agent evaluated 100 apps as potential Composio toolkits, with a second-pass verifier and a deterministic catalog cross-check."
-      >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Apps researched"
-            value={`${researched}/${patterns.totals.apps}`}
-            hint="Two-pass agent pipeline per app"
-          />
-          <StatCard
-            label="Ready to build"
-            value={patterns.buildabilityTotals.ready}
-            hint={`${patterns.buildabilityTotals.caveats} with caveats, ${patterns.buildabilityTotals.blocked} blocked`}
-          />
-          <StatCard
-            label="Official MCP servers"
-            value={patterns.officialMcpCount}
-            hint="Apps shipping a first-party MCP"
-          />
-          <StatCard
-            label="Verified field rate"
-            value={`${verificationRate}%`}
-            hint={`${patterns.verification.fieldsVerified}/${patterns.verification.fieldsChecked} field checks confirmed by pass 2`}
-          />
-        </div>
-      </Section>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Apps researched"
+          value={`${researched}/${patterns.totals.apps}`}
+          hint="Two-pass agent pipeline per app"
+        />
+        <StatCard
+          label="Ready to build"
+          value={patterns.buildabilityTotals.ready}
+          hint={`${patterns.buildabilityTotals.caveats} with caveats, ${patterns.buildabilityTotals.blocked} blocked`}
+        />
+        <StatCard
+          label="Official MCP servers"
+          value={patterns.officialMcpCount}
+          hint="Apps shipping a first-party MCP"
+        />
+        <StatCard
+          label="Verified field rate"
+          value={`${verificationRate}%`}
+          hint={`${patterns.verification.fieldsVerified}/${patterns.verification.fieldsChecked} field checks confirmed by pass 2`}
+        />
+      </div>
 
       <Section
         title="Patterns across all 100 apps"
@@ -234,10 +248,26 @@ export function CaseStudy() {
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="ready" stackId="a" fill={BUILDABILITY_COLORS.ready} />
-                  <Bar dataKey="caveats" stackId="a" fill={BUILDABILITY_COLORS.caveats} />
-                  <Bar dataKey="blocked" stackId="a" fill={BUILDABILITY_COLORS.blocked} />
-                  <Bar dataKey="unknown" stackId="a" fill={BUILDABILITY_COLORS.unknown} />
+                  <Bar
+                    dataKey="ready"
+                    stackId="a"
+                    fill={BUILDABILITY_COLORS.ready}
+                  />
+                  <Bar
+                    dataKey="caveats"
+                    stackId="a"
+                    fill={BUILDABILITY_COLORS.caveats}
+                  />
+                  <Bar
+                    dataKey="blocked"
+                    stackId="a"
+                    fill={BUILDABILITY_COLORS.blocked}
+                  />
+                  <Bar
+                    dataKey="unknown"
+                    stackId="a"
+                    fill={BUILDABILITY_COLORS.unknown}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -265,11 +295,31 @@ export function CaseStudy() {
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="self_serve" stackId="a" fill={ACCESS_COLORS.self_serve} />
-                  <Bar dataKey="paid_plan" stackId="a" fill={ACCESS_COLORS.paid_plan} />
-                  <Bar dataKey="admin_approval" stackId="a" fill={ACCESS_COLORS.admin_approval} />
-                  <Bar dataKey="partnership" stackId="a" fill={ACCESS_COLORS.partnership} />
-                  <Bar dataKey="unknown" stackId="a" fill={ACCESS_COLORS.unknown} />
+                  <Bar
+                    dataKey="self_serve"
+                    stackId="a"
+                    fill={ACCESS_COLORS.self_serve}
+                  />
+                  <Bar
+                    dataKey="paid_plan"
+                    stackId="a"
+                    fill={ACCESS_COLORS.paid_plan}
+                  />
+                  <Bar
+                    dataKey="admin_approval"
+                    stackId="a"
+                    fill={ACCESS_COLORS.admin_approval}
+                  />
+                  <Bar
+                    dataKey="partnership"
+                    stackId="a"
+                    fill={ACCESS_COLORS.partnership}
+                  />
+                  <Bar
+                    dataKey="unknown"
+                    stackId="a"
+                    fill={ACCESS_COLORS.unknown}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -304,37 +354,77 @@ export function CaseStudy() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Where the friction is</CardTitle>
+              <CardTitle>The Composio opportunity gap</CardTitle>
               <CardDescription>
-                Most common blockers, and the split between easy wins and
-                outreach-required apps.
+                Buildability split by catalog coverage. Ready apps not yet in
+                the catalog are net-new toolkits Composio could ship today.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="default">
-                  {patterns.easyWins.length} easy wins
-                </Badge>
-                <Badge variant="destructive">
-                  {patterns.outreachNeeded.length} need outreach
-                </Badge>
-                <Badge variant="secondary">
-                  {patterns.catalog.inCatalog} already in Composio catalog
-                </Badge>
-              </div>
-              <ul className="flex flex-col gap-1.5 text-sm">
-                {patterns.topBlockers.slice(0, 8).map((b) => (
-                  <li key={b.blocker} className="flex items-baseline gap-2">
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {b.count}x
-                    </span>
-                    <span className="line-clamp-2">{b.blocker}</span>
-                  </li>
-                ))}
-              </ul>
+            <CardContent className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={catalogOpportunity} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} />
+                  <YAxis type="category" dataKey="group" width={110} />
+                  <Tooltip />
+                  <Bar
+                    dataKey="ready"
+                    stackId="a"
+                    fill={BUILDABILITY_COLORS.ready}
+                  />
+                  <Bar
+                    dataKey="caveats"
+                    stackId="a"
+                    fill={BUILDABILITY_COLORS.caveats}
+                  />
+                  <Bar
+                    dataKey="blocked"
+                    stackId="a"
+                    fill={BUILDABILITY_COLORS.blocked}
+                  />
+                  <Bar
+                    dataKey="unknown"
+                    stackId="a"
+                    fill={BUILDABILITY_COLORS.unknown}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Where the friction is</CardTitle>
+            <CardDescription>
+              Most common blockers, and the split between easy wins and
+              outreach-required apps.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="default">
+                {patterns.easyWins.length} easy wins
+              </Badge>
+              <Badge variant="destructive">
+                {patterns.outreachNeeded.length} need outreach
+              </Badge>
+              <Badge variant="secondary">
+                {patterns.catalog.inCatalog} already in Composio catalog
+              </Badge>
+            </div>
+            <ul className="flex flex-col gap-1.5 text-sm">
+              {patterns.topBlockers.slice(0, 8).map((b) => (
+                <li key={b.blocker} className="flex items-baseline gap-2">
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {b.count}x
+                  </span>
+                  <span className="line-clamp-2">{b.blocker}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
@@ -379,27 +469,27 @@ export function CaseStudy() {
           <CardContent className="pt-6">
             <ol className="flex flex-col gap-3 text-sm">
               <li>
-                <strong>1. Search</strong> â€” Exa finds API-reference and auth
+                <strong>1. Search:</strong> Exa finds API-reference and auth
                 docs, ranking API pages above OAuth-only pages.
               </li>
               <li>
-                <strong>2. Extract (pass 1)</strong> â€” Kimi K3 fills a strict
+                <strong>2. Extract (pass 1):</strong> Kimi K3 fills a strict
                 JSON schema: auth methods, access model, API surface, MCP,
                 buildability, plus citations.
               </li>
               <li>
-                <strong>3. Fetch</strong> â€” primary docs and auth pages are
+                <strong>3. Fetch:</strong> Primary docs and auth pages are
                 pulled in full; JS-only junk fetches are discarded.
               </li>
               <li>
-                <strong>4. Verify (pass 2)</strong> â€” a second LLM call checks
+                <strong>4. Verify (pass 2):</strong> A second LLM call checks
                 every field against the full corpus and only overwrites on
                 contradiction, emitting per-field confirmed/revised notes.
               </li>
               <li>
-                <strong>5. Catalog cross-check</strong> â€” deterministic, no LLM:
-                findings are compared to a snapshot of the Composio catalog
-                (67 in, 33 absent) to catch MCP/auth mismatches.
+                <strong>5. Catalog cross-check:</strong> Deterministic (no LLM)
+                findings are compared to a snapshot of the Composio catalog (67
+                in, 33 absent) to catch MCP/auth mismatches.
               </li>
             </ol>
           </CardContent>
@@ -499,10 +589,7 @@ export function CaseStudy() {
               <div className="flex flex-col gap-3">
                 <h3 className="text-sm font-semibold">Recorded audits</h3>
                 {audits.map(({ rank, name, audit }) => (
-                  <div
-                    key={rank}
-                    className="rounded-md border p-3 text-sm"
-                  >
+                  <div key={rank} className="rounded-md border p-3 text-sm">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium">{name}</span>
                       <Badge
@@ -534,7 +621,6 @@ export function CaseStudy() {
           </CardContent>
         </Card>
       </Section>
-
     </div>
   )
 }
@@ -545,11 +631,11 @@ function Header() {
       <h1 className="text-2xl font-bold tracking-tight">
         100 Apps as Composio Toolkits
       </h1>
-      <p className="max-w-3xl text-muted-foreground">
+      <p className="text-muted-foreground">
         A two-pass research agent evaluated 100 apps across 10 categories for
         buildability as Composio toolkits â€” auth, access model, API surface,
-        official MCP support â€” then a verifier pass and a deterministic catalog
-        cross-check scored its own work.
+        official MCP support â€” then a verifier pass and a deterministic
+        catalog cross-check scored its own work.
       </p>
     </div>
   )
