@@ -151,7 +151,7 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
         />
       ),
       enableSorting: false,
-      filterFn: "arrHas",
+      filterFn: "hasAny",
       cell: ({ row }) => categoryLabels[row.getValue("category") as Category],
     }),
     columnHelper.accessor((row) => row.authMethods ?? [], {
@@ -164,7 +164,7 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
         />
       ),
       enableSorting: false,
-      filterFn: "arrHas",
+      filterFn: "hasAny",
       meta: {
         className: "hidden md:table-cell",
       },
@@ -193,7 +193,7 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
         />
       ),
       enableSorting: false,
-      filterFn: "arrHas",
+      filterFn: "hasAny",
       meta: {
         className: "hidden lg:table-cell",
       },
@@ -210,7 +210,7 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
         <DataTableColumnHeader column={column} title="MCP" />
       ),
       enableSorting: false,
-      filterFn: "arrHas",
+      filterFn: "hasAny",
       meta: {
         className: "hidden xl:table-cell",
       },
@@ -231,7 +231,7 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
         />
       ),
       enableSorting: false,
-      filterFn: "arrHas",
+      filterFn: "hasAny",
       meta: {
         className: "hidden sm:table-cell",
       },
@@ -257,7 +257,7 @@ export function createColumns(handlers: ColumnActionHandlers = {}) {
         />
       ),
       enableSorting: false,
-      filterFn: "arrHas",
+      filterFn: "hasAny",
       cell: ({ row }) => {
         const app = row.original
         const status =

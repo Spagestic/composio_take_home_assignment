@@ -7,7 +7,6 @@ import {
   createFilteredRowModel,
   createPaginatedRowModel,
   createSortedRowModel,
-  filterFn_arrHas,
   filterFn_includesString,
   rowPaginationFeature,
   rowSelectionFeature,
@@ -16,6 +15,20 @@ import {
   sortFn_text,
   tableFeatures,
 } from "@tanstack/react-table"
+
+const filterFn_hasAny = (
+  row: { getValue: (columnId: string) => unknown },
+  columnId: string,
+  filterValue: unknown
+) => {
+  const selectedValues = Array.isArray(filterValue) ? filterValue : []
+  if (selectedValues.length === 0) return true
+
+  const cellValue = row.getValue(columnId)
+  const cellValues = Array.isArray(cellValue) ? cellValue : [cellValue]
+
+  return selectedValues.some((value) => cellValues.includes(value))
+}
 
 export const features = tableFeatures({
   columnFacetingFeature,
@@ -31,7 +44,7 @@ export const features = tableFeatures({
   facetedUniqueValues: createFacetedUniqueValues(),
   filterFns: {
     includesString: filterFn_includesString,
-    arrHas: filterFn_arrHas,
+    hasAny: filterFn_hasAny,
   },
   sortFns: { alphanumeric: sortFn_alphanumeric, text: sortFn_text },
 })
