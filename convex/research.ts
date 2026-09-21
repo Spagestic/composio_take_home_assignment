@@ -67,7 +67,7 @@ export const researchApp = workflow
 
       const targetDocsUrl = findings.docsUrl ?? searchResult.suggestedDocsUrl;
 
-      // 4. Fetch primary docs content for verification
+      // 4. Fetch primary (API) docs and an auth page when they differ
       const fetchedDocs = targetDocsUrl
         ? await step.runAction(
             internal.researchSteps.fetchDocsContent,
@@ -75,6 +75,28 @@ export const researchApp = workflow
             { retry: { maxAttempts: 2, initialBackoffMs: 2000, base: 2 } }
           )
         : { url: "", text: "", success: false };
+
+      const authUrl = searchResult.suggestedAuthUrl;
+      const fetchedAuth =
+        authUrl && authUrl !== targetDocsUrl
+          ? await step.runAction(
+              internal.researchSteps.fetchDocsContent,
+              { url: authUrl },
+              { retry: { maxAttempts: 1, initialBackoffMs: 1000, base: 2 } }
+            )
+          : { url: "", text: "", success: false };
+
+      const combinedDocs = [
+        fetchedDocs.success && fetchedDocs.text
+          ? `PRIMARY DOCS (${targetDocsUrl}):\n${fetchedDocs.text}`
+          : "",
+        fetchedAuth.success && fetchedAuth.text
+          ? `AUTH DOCS (${authUrl}):\n${fetchedAuth.text}`
+          : "",
+        `FIRST-PASS SEARCH CONTEXT:\n${searchResult.contextText.slice(0, 8000)}`,
+      ]
+        .filter(Boolean)
+        .join("\n\n---\n\n");
 
       // 5. LLM verification pass
       const verifyResult = await step.runAction(
@@ -84,9 +106,7 @@ export const researchApp = workflow
           website: app.website,
           category: app.category,
           docsUrl: targetDocsUrl,
-          primaryDocsContent: fetchedDocs.success && fetchedDocs.text
-            ? fetchedDocs.text
-            : searchResult.contextText.slice(0, 10000),
+          primaryDocsContent: combinedDocs,
           firstPassFindings: {
             oneLiner: findings.oneLiner,
             authMethods: findings.authMethods,
@@ -116,12 +136,26 @@ export const researchApp = workflow
       // Reconcile findings with revisions from verification
       const effectiveAuthMethods = verifyResult.revisedAuthMethods ?? findings.authMethods;
       const effectiveAccess = verifyResult.revisedAccess ?? findings.access;
-      const effectiveBuildability = verifyResult.revisedBuildability ?? findings.buildability;
+      // Do not demote buildability to caveats solely for auth-product migrations
+      // (e.g. Salesforce Connected Apps → External Client Apps) when a public API remains.
+      let effectiveBuildability = verifyResult.revisedBuildability ?? findings.buildability;
+      const buildabilityNote = (verifyResult.fieldChecks ?? [])
+        .filter((c) => c.field.toLowerCase().includes("buildability"))
+        .map((c) => `${c.note} ${c.corrected ?? ""}`)
+        .join(" ");
+      if (
+        findings.buildability === "ready" &&
+        effectiveBuildability === "caveats" &&
+        /connected app|external client app|spring ['’]?26|oauth/i.test(buildabilityNote) &&
+        !/no api|partner.?gate|contact sales|closed/i.test(buildabilityNote)
+      ) {
+        effectiveBuildability = "ready";
+      }
 
       const correctionsCount =
         (verifyResult.revisedAuthMethods ? 1 : 0) +
         (verifyResult.revisedAccess ? 1 : 0) +
-        (verifyResult.revisedBuildability ? 1 : 0);
+        (verifyResult.revisedBuildability && effectiveBuildability !== findings.buildability ? 1 : 0);
 
       // 7. Update the app document in the database
       await step.runMutation(internal.apps.updateResearchInternal, {
@@ -133,7 +167,11 @@ export const researchApp = workflow
         apiBreadth: findings.apiBreadth,
         hasOfficialMcp: findings.hasOfficialMcp,
         buildability: effectiveBuildability,
-        blocker: findings.blocker,
+        blocker:
+          findings.blocker ??
+          (effectiveBuildability === "ready" && /connected app|external client app/i.test(buildabilityNote)
+            ? "Auth setup note: prefer External Client Apps; new Connected Apps are being retired."
+            : null),
         docsUrl: targetDocsUrl,
         evidenceNotes: findings.evidenceNotes,
         sources: searchResult.sources,
@@ -218,7 +256,7 @@ export const startResearch = mutation({
       existing.workflowIds ?? (existing.workflowId ? [existing.workflowId] : []);
     await ctx.db.patch(existing._id, {
       workflowId,
-      workflowIds: [workflowId, ...existingIds.filter((id) => id !== workflowId)],
+      workflowIds: [workflowId, ...existingIds.filter((id) => id !== workflowId)].slice(0, 5),
     });
 
     return workflowId;

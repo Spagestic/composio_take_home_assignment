@@ -123,16 +123,19 @@ Initial Research Findings:
 - Buildability: ${args.firstPassFindings.buildability}
 - Blocker: ${args.firstPassFindings.blocker ?? "none"}
 
-Primary Documentation Text (${args.docsUrl ?? "search snippet"}):
+Evidence corpus (may include a primary docs page, an auth page, and first-pass search snippets):
 ---
 ${boundedDocs}
 ---
 
-Cross-check each field against the primary documentation.
-- If primary documentation confirms the finding, mark verified=true.
-- If primary documentation shows the agent hallucinated or got auth/access/buildability wrong, mark verified=false, provide the corrected value, and supply the revised enum in revisedAuthMethods/revisedAccess/revisedBuildability.
-- Keep each note brief (1-2 sentences).
-- Provide a realistic confidence (high / medium / low). If documentation is sparse, set medium or low.`
+Rules:
+- Treat the FULL corpus as evidence, not a single page. An OAuth/setup page that omits API surface is NOT a reason to change apiBreadth or apiStyles.
+- verified=true if the finding is consistent with the corpus OR is not contradicted by it.
+- verified=false AND a revised* enum ONLY when the corpus CONTRADICTS the first pass (e.g. docs say partnership-only but agent said self_serve).
+- Incomplete evidence on one page is not a contradiction. Do not "correct" broad→unknown just because the fetched page is narrow.
+- Auth product migrations (Connected Apps → External Client Apps, new OAuth app types) are setup notes, not buildability demotions, as long as a public API and a self-serve credential path still exist. Keep buildability ready and mention the migration in the note.
+- Keep each note to 1-2 sentences.
+- Confidence: high if API surface AND auth are both evidenced; medium if only one is; low if the corpus is junk/JS/empty.`
 
     const result = await withAdaptiveLlm<VerificationExtraction>(
       trace,

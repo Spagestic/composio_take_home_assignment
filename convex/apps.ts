@@ -184,7 +184,10 @@ export const getWorkflowSteps = query({
       if (result && Array.isArray(result.page)) return result.page;
       return [];
     } catch (err) {
-      console.error("Failed to list steps:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      if (!/workflow not found/i.test(message)) {
+        console.error("Failed to list steps:", err);
+      }
       return [];
     }
   },
@@ -275,6 +278,14 @@ export const getWorkflowRuns = query({
             error,
           };
         } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          if (/workflow not found/i.test(message)) {
+            return {
+              workflowId,
+              status: "expired",
+              error: "Workflow record no longer exists",
+            };
+          }
           console.error(`Failed to get status for workflow ${workflowId}:`, err);
           return {
             workflowId,
