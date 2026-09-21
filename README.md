@@ -1,50 +1,98 @@
-﻿# Composio AI Product Ops Intern: take-home assignment
+﻿# Composio AI Product Ops Intern — Take-Home Assignment
 
-Research agent that evaluates ~100 apps as potential Composio toolkits (auth, self-serve vs gated, API surface, MCP, buildability), then a case study of patterns and verification.
+A research agent that evaluates ~100 apps as potential Composio toolkits (auth, self-serve vs. gated, API surface, MCP, buildability), followed by a case study of patterns and verification across the full set.
 
-**Status: Complete.** Part 1 delivers the research agent, Convex store, catalog baseline, and per-app table/detail UI. Part 2 delivers the reviewer-facing case study: patterns across all 100 apps, a measured human sample audit, and a live HTML page.
+> **Status: Complete.**
+> **Part 1** delivers the research agent, Convex store, catalog baseline, and per-app table/detail UI.
+> **Part 2** delivers the reviewer-facing case study: patterns across all 100 apps, a measured human sample audit, and a live HTML page.
 
-[Live demo](https://composio-take-home-assignment-iota.vercel.app/)
+**[→ Live demo](https://composio-take-home-assignment-iota.vercel.app/)**
 
-![Demo image](image.png)
+![Demo screenshot](image.png)
 
-## What Part 1 covers
+---
 
-For each app the agent captures:
+## Table of contents
 
-- Category and a one-line description
-- Auth methods (OAuth2, API key, Basic, token, other)
-- Access model (self-serve, paid plan, admin approval, partnership)
-- API surface (REST / GraphQL / SDK / MCP, breadth)
-- Official MCP yes/no
-- Buildability (`ready` / `caveats` / `blocked`) plus a blocker if any
-- Docs URL, per-claim citations, evidence notes
-- Catalog cross-check against the `data/` Composio snapshot (67 in catalog, 33 absent)
+- [Composio AI Product Ops Intern — Take-Home Assignment](#composio-ai-product-ops-intern--take-home-assignment)
+  - [Table of contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Stack](#stack)
+  - [Getting started](#getting-started)
+    - [Install and run](#install-and-run)
+    - [Environment variables](#environment-variables)
+    - [Seed the catalog baseline](#seed-the-catalog-baseline)
+  - [Using the research agent](#using-the-research-agent)
+    - [Single app](#single-app)
+    - [Bulk run](#bulk-run)
+  - [How it works](#how-it-works)
+    - [Agent pipeline](#agent-pipeline)
+    - [Verification loop](#verification-loop)
+  - [Part 2: Case study and audit](#part-2-case-study-and-audit)
+  - [Known limitations](#known-limitations)
+  - [Appendix A: Original brief (research set)](#appendix-a-original-brief-research-set)
+    - [1. CRM and Sales](#1-crm-and-sales)
+    - [2. Support and Helpdesk](#2-support-and-helpdesk)
+    - [3. Communications and Messaging](#3-communications-and-messaging)
+    - [4. Marketing, Ads, Email and Social](#4-marketing-ads-email-and-social)
+    - [5. Ecommerce](#5-ecommerce)
+    - [6. Data, SEO and Scraping](#6-data-seo-and-scraping)
+    - [7. Developer, Infra and Data Platforms](#7-developer-infra-and-data-platforms)
+    - [8. Productivity and Project Management](#8-productivity-and-project-management)
+    - [9. Finance and Fintech](#9-finance-and-fintech)
+    - [10. AI, Research and Media-native](#10-ai-research-and-media-native)
+  - [Appendix B: Ground truth — Composio catalog snapshot](#appendix-b-ground-truth--composio-catalog-snapshot)
+    - [How the files were collected](#how-the-files-were-collected)
+    - [Coverage](#coverage)
+    - [Matching notes](#matching-notes)
+
+---
+
+## Overview
+
+For each app, the agent captures:
+
+| Field                      | Description                                                               |
+| -------------------------- | ------------------------------------------------------------------------- |
+| **Category & description** | Category plus a one-line summary                                          |
+| **Auth methods**           | OAuth2, API key, Basic, token, other                                      |
+| **Access model**           | Self-serve, paid plan, admin approval, partnership                        |
+| **API surface**            | REST / GraphQL / SDK / MCP, and breadth                                   |
+| **Official MCP**           | Yes / no                                                                  |
+| **Buildability**           | `ready` / `caveats` / `blocked`, plus a blocker if any                    |
+| **Evidence**               | Docs URL, per-claim citations, evidence notes                             |
+| **Catalog cross-check**    | Compared against the `data/` Composio snapshot (67 in catalog, 33 absent) |
 
 The UI is a sortable table of the 100 apps. Opening a row shows the verdict, findings, verification, catalog baseline, and workflow traces.
 
 ## Stack
 
-- [Convex](https://convex.dev/) â€” database, workflow, actions
-- [Next.js](https://nextjs.org/) + React â€” table / case-study app
-- [Exa](https://exa.ai/) â€” docs search and page contents
-- Kimi K3 via Modal (OpenAI-compatible) â€” structured extraction and verify pass
-- [Tailwind](https://tailwindcss.com/) â€” UI
+| Layer                               | Technology                             |
+| ----------------------------------- | -------------------------------------- |
+| Database, workflows, actions        | [Convex](https://convex.dev/)          |
+| Frontend                            | [Next.js](https://nextjs.org/) + React |
+| Docs search and page contents       | [Exa](https://exa.ai/)                 |
+| Structured extraction & verify pass | Kimi K3 via Modal (OpenAI-compatible)  |
+| Styling                             | [Tailwind](https://tailwindcss.com/)   |
 
-## How to run
+---
+
+## Getting started
+
+### Install and run
 
 ```bash
 bun install
 bun run dev
 ```
 
-That starts `convex dev` and `next dev` together. Open the app URL Next prints (usually `http://localhost:3000`).
+This starts `convex dev` and `next dev` together. Open the URL Next prints (usually `http://localhost:3000`).
 
-Use `npx convex dev` for the backend during development. Do **not** use `npx convex deploy` except for production.
+> **Note:** Use `npx convex dev` for the backend during development. Do **not** use `npx convex deploy` except for production.
 
-### Environment
+### Environment variables
 
-Copy into `.env.local` (values are not committed):
+Create `.env.local` with the following (values are not committed):
 
 ```bash
 CONVEX_DEPLOYMENT=          # from `npx convex dev`
@@ -56,79 +104,103 @@ MODAL_PROXY_TOKEN_ID=
 MODAL_PROXY_TOKEN_SECRET=
 ```
 
-Modal env vars are set on the Convex deployment as well (`npx convex env set â€¦`) so actions can call Kimi.
+The Modal variables must also be set on the Convex deployment so actions can call Kimi:
 
-### Seed (once per deployment)
+```bash
+npx convex env set MODAL_PROXY_TOKEN_ID <value>
+npx convex env set MODAL_PROXY_TOKEN_SECRET <value>
+```
 
-From the Convex dashboard or CLI:
+### Seed the catalog baseline
+
+Run once per deployment, from the Convex dashboard or CLI:
 
 ```bash
 npx convex run seed:seedAll
+
 # or separately:
 npx convex run catalog:seedCatalogBaseline '{"force":true}'
 ```
 
-`data/` markdown snapshots are parsed into `composioCatalog`. Absence of a file is a real signal: the agent must not invent a Composio toolkit for those 33 apps.
+This parses the `data/` markdown snapshots into the `composioCatalog` table. **Absence of a file is a real signal** — the agent must not invent a Composio toolkit for the 33 apps without one.
 
-### Run the research agent
+---
+
+## Using the research agent
+
+### Single app
 
 1. Open `/`.
 2. Click an app row.
 3. Press **Run** / **Re-run**.
-4. Watch status on the table (`queued` â†’ `running` â†’ `completed` / `failed`).
-5. In the detail panel: verdict, findings, verify pass, catalog baseline, and expandable execution steps.
+4. Watch the status in the table: `queued` → `running` → `completed` / `failed`.
+5. In the detail panel, review the verdict, findings, verify pass, catalog baseline, and expandable execution steps.
 
 Each run is a durable Convex workflow (`convex/research.ts`). Re-runs keep the last few workflow IDs for history.
 
-To research all untouched records, use **Run remaining** beside the table filter and confirm the count. The action queues only apps with `not_started` status; completed, failed, queued, and running records are left unchanged. Progress is shown in the toolbar, and failed records can be retried individually from their row.
+### Bulk run
 
-## Agent pipeline
+Use **Run remaining** (beside the table filter) and confirm the count. This queues only apps with `not_started` status; completed, failed, queued, and running records are left unchanged. Progress is shown in the toolbar, and failed records can be retried individually from their row.
+
+---
+
+## How it works
+
+### Agent pipeline
 
 ```text
 load app
-â†’ Exa search (API-reference URLs ranked above OAuth-only pages)
-â†’ LLM pass 1: structured extraction (Kimi K3, JSON schema)
-â†’ fetch primary docs + auth page (skip JS-only junk)
-â†’ LLM pass 2: verify against the full corpus, not a single page
-â†’ deterministic Composio catalog compare
-â†’ write findings + verification
+→ Exa search (API-reference URLs ranked above OAuth-only pages)
+→ LLM pass 1: structured extraction (Kimi K3, JSON schema)
+→ fetch primary docs + auth page (skip JS-only junk)
+→ LLM pass 2: verify against the full corpus, not a single page
+→ deterministic Composio catalog compare
+→ write findings + verification
 ```
 
-Pass 2 only overwrites a field when the corpus **contradicts** pass 1. Incomplete evidence (e.g. an OAuth page that does not list REST objects) is not treated as â€œunknown API.â€ Auth-product migrations such as Salesforce Connected Apps â†’ External Client Apps are stored as a setup note, not a demotion from `ready` to `caveats`.
+Design notes:
 
-LLM calls use a raised token budget, `finish_reason` checks, JSON salvage, and retries on truncation / rate limits.
+- Pass 2 only overwrites a field when the corpus **contradicts** pass 1. Incomplete evidence (e.g. an OAuth page that does not list REST objects) is not treated as "unknown API."
+- Auth-product migrations (e.g. Salesforce Connected Apps → External Client Apps) are stored as a setup note, not a demotion from `ready` to `caveats`.
+- LLM calls use a raised token budget, `finish_reason` checks, JSON salvage, and retries on truncation / rate limits.
 
-## Verification (built into Part 1)
+### Verification loop
 
-Accuracy loop that already exists:
+Accuracy checks built into Part 1:
 
-1. **First pass** â€” Exa snippets â†’ structured fields + citations.
-2. **Second pass** â€” re-fetch docs, per-field confirmed/revised notes, confidence.
-3. **Catalog check** â€” no LLM. Flags e.g. Composio ships an MCP toolkit while the agent said `hasOfficialMcp=false`, or catalog lists OAuth2 while the agent omitted it.
+| Step                 | What it does                                                                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **1. First pass**    | Exa snippets → structured fields + citations                                                                                                                                   |
+| **2. Second pass**   | Re-fetch docs; per-field confirmed/revised notes and a confidence score                                                                                                        |
+| **3. Catalog check** | Deterministic, no LLM. Flags mismatches such as: Composio ships an MCP toolkit but the agent said `hasOfficialMcp=false`, or the catalog lists OAuth2 but the agent omitted it |
 
 Human review is included as a sample audit: open the live docs URL, score hits/misses, and report how accuracy moved between passes.
 
-## Known limitations
-
-- Exa `/contents` sometimes returns client telemetry JS instead of rendered docs. Those fetches are discarded and the search corpus is used instead.
-- Workflow IDs expire in Convex; missing runs show as `expired` rather than crashing the panel.
-- The live research results depend on the configured Convex deployment and external documentation providers.
+---
 
 ## Part 2: Case study and audit
 
 The reviewer-facing case study is complete and includes:
 
-- All 100 apps researched via the table's **Run remaining** bulk action.
-- `analysis:patterns` query aggregates auth mix, access by category, buildability, blockers, catalog agreement, easy wins vs outreach, and pass-2 verification stats.
-- Optional `audit` field on apps plus `audit:recordAudit` / `audit:clearAudit` mutations and an `audit:suggestSample` query for the human sample audit.
-- Root page case study: TL;DR stats, pattern charts, agent pipeline explanation, and verification/audit section above the live table.
-- Human audits recorded for the suggested sample and surfaced in the verification section.
+- **Full coverage** — all 100 apps researched via the table's **Run remaining** bulk action.
+- **Pattern analysis** — the `analysis:patterns` query aggregates auth mix, access model by category, buildability, blockers, catalog agreement, easy wins vs. outreach, and pass-2 verification stats.
+- **Audit tooling** — an optional `audit` field on apps, `audit:recordAudit` / `audit:clearAudit` mutations, and an `audit:suggestSample` query for the human sample audit.
+- **Case study page** — the root page shows TL;DR stats, pattern charts, an agent-pipeline explanation, and a verification/audit section above the live table.
+- **Recorded audits** — human audits recorded for the suggested sample and surfaced in the verification section.
 
 ---
 
-## Original brief (research set)
+## Known limitations
 
-Composio turns apps into tools agents can call. This set is 100 apps across 10 categories so the interesting work is the patterns, not any single row.
+- Exa `/contents` sometimes returns client telemetry JS instead of rendered docs. Those fetches are discarded and the search corpus is used instead.
+- Workflow IDs expire in Convex; missing runs show as `expired` rather than crashing the panel.
+- Live research results depend on the configured Convex deployment and external documentation providers.
+
+---
+
+## Appendix A: Original brief (research set)
+
+> Composio turns apps into tools agents can call. This set is 100 apps across 10 categories, so the interesting work is the patterns, not any single row.
 
 ### 1. CRM and Sales
 
@@ -220,7 +292,7 @@ Composio turns apps into tools agents can call. This set is 100 apps across 10 c
 | 59  | Waterfall.io | waterfall.io (contact/company intel) |
 | 60  | Clay         | clay.com                             |
 
-### 7. Developer, Infra and Data platforms
+### 7. Developer, Infra and Data Platforms
 
 | #   | App           | Website / hint                |
 | --- | ------------- | ----------------------------- |
@@ -280,25 +352,27 @@ Composio turns apps into tools agents can call. This set is 100 apps across 10 c
 | 99  | YouTube Transcript | transcriptapi.com                        |
 | 100 | Grain              | grain.com (meeting notes)                |
 
-## Ground truth: Composio catalog snapshot
+---
 
-`data/` is a snapshot of [Composio toolkit docs](https://docs.composio.dev/toolkits) for apps in this set. The agent compares its findings to it (already a toolkit? auth / MCP kind line up?).
+## Appendix B: Ground truth — Composio catalog snapshot
+
+`data/` is a snapshot of the [Composio toolkit docs](https://docs.composio.dev/toolkits) for apps in this set. The agent compares its findings against it (already a toolkit? do auth / MCP kind line up?).
 
 ### How the files were collected
 
 1. Download `https://docs.composio.dev/toolkits.md`.
 2. Parse display name, URL slug, and `SLUG`.
-3. Match the 100 apps by name / slug (aliases: GoHighLevel â†’ `highlevel`, WhatsApp Business â†’ `whatsapp`).
-4. If matched: `https://docs.composio.dev/toolkits/{slug}.md` â†’ `data/{slug}.md`.
-5. No catalog row â†’ no file. Absence is a check: do not invent a toolkit.
+3. Match the 100 apps by name / slug (aliases: GoHighLevel → `highlevel`, WhatsApp Business → `whatsapp`).
+4. If matched, save `https://docs.composio.dev/toolkits/{slug}.md` → `data/{slug}.md`.
+5. No catalog row → no file. Absence is a check: do not invent a toolkit.
 
 ### Coverage
 
-- **67 in catalog** under `data/`.
+- **67 in catalog** — files present under `data/`.
 - **33 not in catalog:** Podio, Copper, DealCloud, Front, LiveAgent, Gladly, Twilio, Zoho Cliq, Lark, Aircall, Vonage, systeme.io, Threads, WooCommerce, BigCommerce, Salesforce Commerce Cloud, Magento, Squarespace, Ecwid, Amazon Selling Partner, fanbasis, SE Ranking, Sherlock, Waterfall.io, MongoDB Atlas, Smartsheet, Binance, Paygent Connect, iPayX, PitchBook, Reducto, Mermaid CLI, Grain.
 
-Matching notes:
+### Matching notes
 
-- Some apps are **MCP toolkits** only (`pylon_mcp`, `netlify_mcp`, `plaid_mcp`, `otter_ai_mcp`, `devin_mcp`, `higgsfield_mcp`).
-- **Zoho CRM** maps to generic `zoho`, not `zoho_crm`.
-- **Mermaid CLI** was not saved; the catalog has [Mermaid Chart MCP](https://docs.composio.dev/toolkits/mermaid_chart_mcp.md), a different product.
+- Some apps exist as **MCP-only toolkits**: `pylon_mcp`, `netlify_mcp`, `plaid_mcp`, `otter_ai_mcp`, `devin_mcp`, `higgsfield_mcp`.
+- **Zoho CRM** maps to the generic `zoho` toolkit, not `zoho_crm`.
+- **Mermaid CLI** was not saved; the catalog has [Mermaid Chart MCP](https://docs.composio.dev/toolkits/mermaid_chart_mcp.md), which is a different product.
