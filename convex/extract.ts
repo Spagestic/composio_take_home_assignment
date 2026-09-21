@@ -10,6 +10,7 @@ import {
   apiStyleValidator,
   authMethodValidator,
   buildabilityValidator,
+  citationsValidator,
 } from "./schema";
 
 export const researchExtractionSchema = z.object({
@@ -49,6 +50,16 @@ export const researchExtractionSchema = z.object({
   evidenceNotes: z
     .string()
     .describe("Concise proof/evidence summarizing why these conclusions were reached based on docs."),
+  citations: z
+    .object({
+      auth: z.string().nullable().optional().describe("URL backing the authMethods finding"),
+      access: z.string().nullable().optional().describe("URL backing the access model finding"),
+      apiSurface: z.string().nullable().optional().describe("URL backing the API styles and breadth finding"),
+      mcp: z.string().nullable().optional().describe("URL backing the official MCP finding"),
+      buildability: z.string().nullable().optional().describe("URL backing the buildability verdict"),
+    })
+    .optional()
+    .describe("Per-claim source URLs drawn from the provided search sources."),
 });
 
 export type ResearchExtraction = z.infer<typeof researchExtractionSchema>;
@@ -101,6 +112,7 @@ export const extractResearchFindings = internalAction({
     blocker: v.union(v.string(), v.null()),
     docsUrl: v.union(v.string(), v.null()),
     evidenceNotes: v.string(),
+    citations: v.optional(v.union(citationsValidator, v.null())),
   }),
   handler: async (_ctx, args) => {
     const prompt = `You are evaluating the app "${args.name}" (${args.website}, category: ${args.category}) as an AI agent toolkit candidate for Composio.
@@ -111,6 +123,7 @@ ${args.contextText.slice(0, 20000)}
 ---
 
 Analyze this context thoroughly and extract the exact structured evaluation findings matching the schema.
+For citations, attribute each claim (auth, access, apiSurface, mcp, buildability) to the specific source URL from the context that best supports it.
 Only return factual, verified conclusions supported by the documentation context.`;
 
     const findings = await withSlowBackoff(() =>

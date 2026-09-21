@@ -14,6 +14,9 @@ import {
   appDocValidator,
   authMethodValidator,
   buildabilityValidator,
+  citationsValidator,
+  sourceItemValidator,
+  verificationResultValidator,
 } from "./schema"
 
 export const list = query({
@@ -112,6 +115,9 @@ export const updateResearchInternal = internalMutation({
     blocker: v.optional(v.union(v.string(), v.null())),
     docsUrl: v.optional(v.union(v.string(), v.null())),
     evidenceNotes: v.optional(v.union(v.string(), v.null())),
+    sources: v.optional(v.union(v.array(sourceItemValidator), v.null())),
+    citations: v.optional(v.union(citationsValidator, v.null())),
+    verification: v.optional(v.union(verificationResultValidator, v.null())),
   },
   returns: v.id("apps"),
   handler: async (ctx, args) => {
@@ -143,6 +149,9 @@ export const updateResearch = mutation({
     blocker: v.optional(v.union(v.string(), v.null())),
     docsUrl: v.optional(v.union(v.string(), v.null())),
     evidenceNotes: v.optional(v.union(v.string(), v.null())),
+    sources: v.optional(v.union(v.array(sourceItemValidator), v.null())),
+    citations: v.optional(v.union(citationsValidator, v.null())),
+    verification: v.optional(v.union(verificationResultValidator, v.null())),
   },
   returns: v.id("apps"),
   handler: async (ctx, args) => {
