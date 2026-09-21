@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as analysis from "../analysis.js";
 import type * as apps from "../apps.js";
 import type * as catalog from "../catalog.js";
 import type * as catalogParser from "../catalogParser.js";
@@ -32,6 +33,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analysis: typeof analysis;
   apps: typeof apps;
   catalog: typeof catalog;
   catalogParser: typeof catalogParser;
