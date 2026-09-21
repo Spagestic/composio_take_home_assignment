@@ -2,6 +2,7 @@ import { WorkflowManager } from "@convex-dev/workflow";
 import { v } from "convex/values";
 import { components, internal } from "./_generated/api";
 import { mutation } from "./_generated/server";
+import { compareWithCatalogBaseline } from "./lib/catalogCompare";
 
 export const workflow = new WorkflowManager(components.workflow);
 
@@ -77,7 +78,7 @@ export const researchApp = workflow
 
       // 5. LLM verification pass
       const verifyResult = await step.runAction(
-        internal.extract.verifyResearchFindings,
+        internal.verify.verifyResearchFindings,
         {
           name: app.name,
           website: app.website,
@@ -85,7 +86,7 @@ export const researchApp = workflow
           docsUrl: targetDocsUrl,
           primaryDocsContent: fetchedDocs.success && fetchedDocs.text
             ? fetchedDocs.text
-            : searchResult.contextText.slice(0, 12000),
+            : searchResult.contextText.slice(0, 10000),
           firstPassFindings: {
             oneLiner: findings.oneLiner,
             authMethods: findings.authMethods,
@@ -106,30 +107,11 @@ export const researchApp = workflow
         { rank: args.rank }
       );
 
-      let catalogComparison: "match" | "mismatch" | "not_researched" | "not_applicable" = "not_applicable";
-      const catalogNotesList: string[] = [];
-
-      if (catalogBaseline && catalogBaseline.inCatalog) {
-        let mismatches = 0;
-        // Check MCP kind
-        if (catalogBaseline.composioToolkitKind === "mcp" && !findings.hasOfficialMcp) {
-          mismatches++;
-          catalogNotesList.push(`Composio lists this as an MCP toolkit (${catalogBaseline.composioSlug}), but agent detected hasOfficialMcp=false.`);
-        }
-
-        // Check OAuth presence
-        const baselineAuth = (catalogBaseline.composioAuth ?? "").toUpperCase();
-        const effectiveAuth = (verifyResult.revisedAuthMethods ?? findings.authMethods);
-        if (baselineAuth.includes("OAUTH") && !effectiveAuth.includes("oauth2")) {
-          mismatches++;
-          catalogNotesList.push(`Catalog baseline lists ${catalogBaseline.composioAuth}, but agent did not include oauth2.`);
-        }
-
-        catalogComparison = mismatches > 0 ? "mismatch" : "match";
-      } else if (catalogBaseline && !catalogBaseline.inCatalog) {
-        catalogComparison = "match";
-        catalogNotesList.push("Verified absent from Composio catalog (one of 33 set).");
-      }
+      const { catalogComparison, catalogNotes } = compareWithCatalogBaseline({
+        baseline: catalogBaseline,
+        findings,
+        revisions: verifyResult,
+      });
 
       // Reconcile findings with revisions from verification
       const effectiveAuthMethods = verifyResult.revisedAuthMethods ?? findings.authMethods;
@@ -162,7 +144,7 @@ export const researchApp = workflow
           summary: verifyResult.summary,
           fieldChecks: verifyResult.fieldChecks,
           catalogComparison,
-          catalogNotes: catalogNotesList.length > 0 ? catalogNotesList.join(" ") : null,
+          catalogNotes,
           correctionsApplied: correctionsCount,
         },
       });
